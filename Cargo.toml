@@ -1,0 +1,13 @@
+[package]
+name = "uclicious"
+version = "0.1.0"
+authors = ["Andrey Cherkashin <with.out@me.com>"]
+edition = "2018"
+
+[dependencies]
+libucl-bind = { git = "https://github.com/andoriyu/libucl-rs", branch = "master" }
+bitflags = "1.2.1"
+
+[[example]]
+name = "leak-test"
+crate-type = ["bin"]
