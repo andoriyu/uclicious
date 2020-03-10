@@ -11,3 +11,6 @@ bitflags = "1.2.1"
 [[example]]
 name = "leak-test"
 crate-type = ["bin"]
+
+[workspace]
+members = ["uclicious-derive", "uclicious-example"]

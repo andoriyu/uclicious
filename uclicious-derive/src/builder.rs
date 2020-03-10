@@ -1,0 +1,171 @@
+use crate::{bindings, DEFAULT_STRUCT_NAME};
+use crate::block::Block;
+use crate::utils::doc_comment_from;
+use darling::ToTokens;
+use proc_macro2::{TokenStream, Span};
+use quote::TokenStreamExt;
+use syn::punctuated::Punctuated;
+use syn::{Path, TypeParamBound, TraitBoundModifier, TraitBound};
+use syn::token::Token;
+
+pub struct Builder<'a> {
+    /// Name of this builder struct.
+    pub ident: syn::Ident,
+    /// Type parameters and lifetimes attached to this builder's struct
+    /// definition.
+    pub generics: Option<&'a syn::Generics>,
+    /// Visibility of the builder struct, e.g. `syn::Visibility::Public`.
+    pub visibility: syn::Visibility,
+    /// Fields of the builder struct, e.g. `foo: u32,`
+    ///
+    /// Expects each entry to be terminated by a comma.
+    pub fields: Vec<TokenStream>,
+    /// Functions of the builder struct, e.g. `fn bar() -> { unimplemented!() }`
+    pub functions: Vec<TokenStream>,
+    /// Doc-comment of the builder struct.
+    pub doc_comment: Option<syn::Attribute>,
+}
+
+impl<'a> Builder<'a> {
+    /// Set a doc-comment for this item.
+    pub fn doc_comment(&mut self, s: String) -> &mut Self {
+        self.doc_comment = Some(doc_comment_from(s));
+        self
+    }
+
+    /// Add a field to the builder
+    pub fn push_field<T: ToTokens>(&mut self, f: &T) -> &mut Self {
+        self.fields.push(quote!(#f));
+        self
+    }
+    /// Add final build function to the builder
+    pub fn push_build_fn(&mut self, f: BuildMethod) -> &mut Self {
+        self.functions.push(quote!(#f));
+        self
+    }
+
+    /// Add `Clone` trait bound to generic types for non-owned builders.
+    /// This enables target types to declare generics without requiring a
+    /// `Clone` impl. This is the same as how the built-in derives for
+    /// `Clone`, `Default`, `PartialEq`, and other traits work.
+    fn compute_impl_bounds(&self) -> syn::Generics {
+        if let Some(type_gen) = self.generics {
+            let generics = type_gen.clone();
+            return generics;
+        } else {
+            Default::default()
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct BuildMethod<'a> {
+    /// Name of this build fn.
+    pub ident: &'a syn::Ident,
+    /// Visibility of the build method, e.g. `syn::Visibility::Public`.
+    pub visibility: syn::Visibility,
+    /// Type of the target field.
+    ///
+    /// The corresonding builder field will be `Option<field_type>`.
+    pub target_ty: &'a syn::Ident,
+    /// Type parameters and lifetimes attached to this builder struct.
+    pub target_ty_generics: Option<syn::TypeGenerics<'a>>,
+    /// Field initializers for the target type.
+    pub initializers: Vec<TokenStream>,
+    /// Doc-comment of the builder struct.
+    pub doc_comment: Option<syn::Attribute>,
+    /// Default value for the whole struct.
+    ///
+    /// This will be in scope for all initializers as `__default`.
+    pub default_struct: Option<Block>,
+    /// Validation function with signature `&FooBuilder -> Result<(), String>`
+    /// to call before the macro-provided struct buildout.
+    pub validate_fn: Option<&'a syn::Path>,
+}
+
+#[derive(Debug, Clone)]
+pub struct BuilderField<'a> {
+    /// Name of the target field.
+    pub field_ident: &'a syn::Ident,
+    /// Type of the target field.
+    ///
+    /// The corresonding builder field will be `Option<field_type>`.
+    pub field_type: &'a syn::Type,
+    /// Visibility of this builder field, e.g. `syn::Visibility::Public`.
+    pub field_visibility: syn::Visibility,
+    /// Attributes which will be attached to this builder field.
+    pub attrs: &'a [syn::Attribute],
+}
+
+impl<'a> ToTokens for BuilderField<'a> {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let vis = &self.field_visibility;
+        let ident = self.field_ident;
+        let ty = self.field_type;
+        let attrs = self.attrs;
+        let option = bindings::option_ty();
+        tokens.append_all(quote! {
+            #(#attrs)* #ident: #option<#ty>,
+        })
+    }
+}
+
+impl< 'a > ToTokens for BuildMethod < 'a > {
+    fn to_tokens( & self, tokens: & mut TokenStream) {
+        let ident = self.ident;
+        let vis = &self.visibility;
+        let target_ty = &self.target_ty;
+        let target_ty_generics = &self.target_ty_generics;
+        let initializers = &self.initializers;
+        let doc_comment = &self.doc_comment;
+        let default_struct = self.default_struct.as_ref().map(|default_expr| {
+            let ident = syn::Ident::new(DEFAULT_STRUCT_NAME, Span::call_site());
+            quote!(let #ident: #target_ty #target_ty_generics = #default_expr;)
+        });
+        let result = bindings::result_ty();
+        let string = bindings::string_ty();
+        tokens.append_all(quote!(
+            #doc_comment
+            #vis fn #ident(self) -> #result<#target_ty #target_ty_generics #string> {
+                #default_struct
+                unimplemented!()
+            }
+        ))
+    }
+}
+impl< 'a > ToTokens for Builder < 'a > {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let builder_vis = &self.visibility;
+        let builder_ident = &self.ident;
+        let bounded_generics = self.compute_impl_bounds();
+        let (impl_generics, _, _) = bounded_generics.split_for_impl();
+        let (struct_generics, ty_generics, where_clause) = self
+            .generics
+            .map(syn::Generics::split_for_impl)
+            .map(|(i, t, w)| (Some(i), Some(t), Some(w)))
+            .unwrap_or((None, None, None));
+        let builder_fields = &self.fields;
+        let functions = &self.functions;
+        let derived_traits = {
+            let default_trait: Path = parse_quote!(Default);
+            let clone_trait: Path = parse_quote!(Clone);
+
+            let mut traits: Punctuated<&Path, Token![,]> = Default::default();
+            traits.push(&default_trait);
+            quote!(#traits)
+        };
+        let builder_doc_comment = &self.doc_comment;
+        tokens.append_all(quote!(
+                #[derive(#derived_traits)]
+                #builder_doc_comment
+                #builder_vis struct #builder_ident #struct_generics #where_clause {
+                    #(#builder_fields)*
+                }
+
+                #[allow(dead_code)]
+                impl #impl_generics #builder_ident #ty_generics #where_clause {
+                    #(#functions)*
+                }
+            ));
+    }
+}

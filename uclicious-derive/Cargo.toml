@@ -1,0 +1,14 @@
+[package]
+name = "uclicious-derive"
+version = "0.1.0"
+authors = ["Andrey Cherkashin <with.out@me.com>"]
+edition = "2018"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = "1.0.16"
+quote = "1.0.3"
+darling = "0.10.2"
+proc-macro2 = "1.0.9"
