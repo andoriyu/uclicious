@@ -6,7 +6,7 @@ use crate::raw::{Priority, DuplicateStrategy};
 use crate::error;
 use std::path::Path;
 use super::{utils,ParserFlags,DEFAULT_PARSER_FLAG};
-use crate::raw::object::{ObjectRef, Object};
+use crate::raw::object::{Object};
 use std::fmt;
 
 /// Raw parser object.

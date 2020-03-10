@@ -1,17 +1,23 @@
-use libucl_bind::{ucl_object_t, ucl_type_t, ucl_object_type, ucl_object_lookup, ucl_object_unref, ucl_object_tostring, ucl_object_toint, ucl_object_todouble, ucl_object_get_priority, ucl_object_toboolean, ucl_object_key, ucl_object_fromint, ucl_object_fromdouble, ucl_object_frombool, ucl_object_lookup_path, ucl_object_tostring_forced, ucl_object_tostring_safe, ucl_object_toint_safe};
+use libucl_bind::{ucl_object_t, ucl_type_t, ucl_object_type, ucl_object_lookup, ucl_object_unref, ucl_object_get_priority, ucl_object_key, ucl_object_fromint, ucl_object_fromdouble, ucl_object_frombool, ucl_object_lookup_path, ucl_object_tostring_forced, ucl_object_tostring_safe, ucl_object_toint_safe, ucl_object_ref, ucl_object_todouble_safe, ucl_object_toboolean_safe, ucl_object_fromstring};
 use crate::raw::{utils, Priority};
 use std::error::Error;
 use std::fmt;
 use std::convert::TryFrom;
 use crate::raw::iterator::{IterMut, Iter, IntoIter};
 use bitflags::_core::fmt::Formatter;
-use std::ffi::CStr;
+use std::ffi::{CStr};
 use std::ops::{Deref, DerefMut};
 use std::mem::MaybeUninit;
+use std::borrow::ToOwned;
+use bitflags::_core::borrow::Borrow;
 
+/// Errors that could be returned by `Object` or `ObjectRef` functions.
 #[derive(Eq, PartialEq, Debug, Clone)]
 pub enum ObjectError {
     KeyNotFound(String),
+    /// Object was found, but value type doesn't match the desired type.
+    ///
+    /// NOTE: Error only returned when conversion is done by `TryFrom` trait. Built-in functions return `None`.
     WrongType { key: String, actual_type: ucl_type_t, wanted_type: ucl_type_t},
 }
 
@@ -31,6 +37,7 @@ impl fmt::Display for ObjectError {
 }
 
 
+/// Owned and mutable instance of UCL Object.
 pub struct  Object {
     inner: ObjectRef
 }
@@ -49,6 +56,19 @@ impl DerefMut for Object {
     }
 }
 
+impl fmt::Debug for Object {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let ptr = unsafe {
+            ucl_object_tostring_forced(self.as_ptr())
+        };
+        let cstr = unsafe {CStr::from_ptr(ptr)};
+        let as_string = cstr.to_string_lossy().to_string();
+        f.debug_struct("Object")
+            .field("string_value", &as_string)
+            .finish()
+    }
+}
+
 impl Object {
     pub(crate) fn from_c_ptr(object: *const ucl_object_t) -> Option<Object> {
         ObjectRef::from_c_ptr(object)
@@ -58,7 +78,23 @@ impl Object {
     }
 }
 
-/// UCL Object structure. T
+
+/// Objects may not actually dropped, but their reference count is decreased.
+impl Drop for Object {
+    fn drop(&mut self) {
+        unsafe {
+            if !self.object.is_null() { ucl_object_unref(self.object as *mut ucl_object_t); }
+        }
+    }
+}
+
+impl Borrow<ObjectRef> for Object {
+    fn borrow(&self) -> &ObjectRef {
+        &self.inner
+    }
+}
+
+/// An immutable reference to UCL Object structure.
 pub struct ObjectRef {
     object: *mut ucl_object_t,
     kind: ucl_type_t,
@@ -134,41 +170,37 @@ impl ObjectRef {
         utils::to_str(c_str)
     }
 
-    pub fn lookup<K: AsRef<str>>(&self, key: K) -> Option<Object> {
+    /// Lookup a key within an object with type Object.
+    pub fn lookup<K: AsRef<str>>(&self, key: K) -> Option<ObjectRef> {
         if !self.is_object() {
             return None;
         }
         let key = utils::to_c_string(key);
-
         let obj = unsafe {
             ucl_object_lookup(self.object, key.as_ptr())
         };
-
-        Object::from_c_ptr(obj as *mut ucl_object_t)
+        ObjectRef::from_c_ptr(obj as *mut ucl_object_t)
     }
 
+    /// Perform a nested lookup with dot notation.
     pub fn lookup_path<K: AsRef<str>>(&self, path: K) -> Option<ObjectRef> {
         if !self.is_object() {
             return None;
         }
         let key = utils::to_c_string(path);
-
         let obj = unsafe {
             ucl_object_lookup_path(self.object, key.as_ptr())
         };
-
         ObjectRef::from_c_ptr(obj as *mut ucl_object_t)
     }
     /// Return string value
     pub fn as_string(&self) -> Option<String> {
 
         if !self.is_string() { return None }
-
         let mut ptr = MaybeUninit::zeroed();
         let result = unsafe {
             ucl_object_tostring_safe(self.object, ptr.as_mut_ptr())
         };
-
         if result {
             let ptr = unsafe { ptr.assume_init() };
             utils::to_str(ptr)
@@ -181,9 +213,7 @@ impl ObjectRef {
         if !self.is_integer() {
             return None
         }
-
         let mut ptr = MaybeUninit::zeroed();
-
         let result = unsafe {
             ucl_object_toint_safe(self.object, ptr.as_mut_ptr())
         };
@@ -199,67 +229,80 @@ impl ObjectRef {
         if !self.is_float() {
             return None;
         }
-
-        let out = unsafe {
-            ucl_object_todouble(self.object)
+        let mut ptr = MaybeUninit::zeroed();
+        let result = unsafe {
+            ucl_object_todouble_safe(self.object, ptr.as_mut_ptr())
         };
-        Some(out)
+        if result {
+            let ptr = unsafe { ptr.assume_init() };
+            Some(ptr)
+        } else {
+            None
+        }
     }
 
     pub fn as_bool(&self) -> Option<bool> {
         if !self.is_boolean() {
             return None;
         }
-        let out = unsafe {
-            ucl_object_toboolean(self.object)
+        let mut ptr = MaybeUninit::zeroed();
+        let result = unsafe {
+            ucl_object_toboolean_safe(self.object, ptr.as_mut_ptr())
         };
-        Some(out)
+        if result {
+            let ptr = unsafe { ptr.assume_init() };
+            Some(ptr)
+        } else {
+            None
+        }
     }
 
     pub fn as_null(&self) -> Option<()> {
-        if !self.is_boolean() {
+        if !self.is_null() {
             return None;
         }
         Some(())
     }
 
+    /// Preferred way to construct an iterator. Items returned by this iterator are always `ObjectRef`.
     pub fn iter(&self) -> Iter {
         Iter::new(self)
     }
 }
 
-impl Drop for Object {
-    fn drop(&mut self) {
-        unsafe {
-            if !self.object.is_null() { ucl_object_unref(self.object as *mut ucl_object_t); }
-        }
-    }
-}
-
-impl From<i64> for ObjectRef {
+impl From<i64> for Object {
     fn from(source: i64) -> Self {
         let ptr = unsafe {
             ucl_object_fromint(source)
         };
-        ObjectRef::from_c_ptr(ptr).expect("Failed to construct an object.")
+        Object::from_c_ptr(ptr).expect("Failed to construct an object.")
     }
 }
 
-impl From<f64> for ObjectRef {
+impl From<f64> for Object {
     fn from(source: f64) -> Self {
         let ptr = unsafe {
             ucl_object_fromdouble(source)
         };
-        ObjectRef::from_c_ptr(ptr).expect("Failed to construct an object.")
+        Object::from_c_ptr(ptr).expect("Failed to construct an object.")
     }
 }
 
-impl From<bool> for ObjectRef {
+impl From<bool> for Object {
     fn from(source: bool) -> Self {
         let ptr = unsafe {
             ucl_object_frombool(source)
         };
-        ObjectRef::from_c_ptr(ptr).expect("Failed to construct an object.")
+        Object::from_c_ptr(ptr).expect("Failed to construct an object.")
+    }
+}
+impl From<&str> for Object {
+    fn from(source: &str) -> Self {
+        let cstring = utils::to_c_string(source);
+        let ptr = unsafe {
+            ucl_object_fromstring(cstring.as_ptr())
+        };
+        Object::from_c_ptr(ptr).expect("Failed to construct an object.")
     }
 }
 
@@ -354,7 +397,21 @@ impl fmt::Debug for ObjectRef {
             ucl_object_tostring_forced(self.as_ptr())
         };
         let cstr = unsafe {CStr::from_ptr(ptr)};
-        write!(f, "{:?}", cstr)
+        let as_string = cstr.to_string_lossy().to_string();
+        f.debug_struct("ObjectRef")
+            .field("string_value", &as_string)
+            .finish()
+    }
+}
+
+impl ToOwned for ObjectRef {
+    type Owned = Object;
+
+    fn to_owned(&self) -> Self::Owned {
+        let ptr = unsafe {
+            ucl_object_ref(self.as_ptr())
+        };
+        Object::from_c_ptr(ptr).expect("Got ObjectRef with null ptr")
     }
 }
 
