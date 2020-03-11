@@ -3,7 +3,7 @@ use uclicious;
 
 #[derive(Debug,Uclicious)]
 pub struct Connection {
-    host: String,
+//    host: String,
     #[ucl(default = "420")]
     port: i64,
 //    #[ucl(path = "type")]
@@ -11,4 +11,9 @@ pub struct Connection {
 }
 fn main() {
     println!("Hello, world!");
+}
+
+
+mod wat {
+
 }
