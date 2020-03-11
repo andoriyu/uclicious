@@ -1,4 +1,7 @@
+#![allow(unused)]
+
 use syn::{Path, Type};
+use proc_macro2::Ident;
 
 pub fn string_ty() -> Path {
     syn::parse_str("::std::string::String").unwrap()
@@ -40,9 +43,22 @@ pub fn try_into_trait() -> Path {
     syn::parse_str("::std::convert::TryInto").unwrap()
 }
 
+/// TryFrom trait.
+pub fn try_from_trait() -> Path {
+    syn::parse_str("::std::convert::TryFrom").unwrap()
+}
+
 /// Boxed error type
 pub fn boxed_error() -> Type {
     syn::parse_str("::std::boxed::Box<dyn ::std::error::Error>").unwrap()
+}
+
+pub fn deref_trait() -> Type {
+    syn::parse_str("::std::ops::Deref").unwrap()
+}
+
+pub fn borrow_trait() -> Type {
+    syn::parse_str("::std::borrow::Borrow").unwrap()
 }
 
 /// UCL Parser
@@ -59,6 +75,15 @@ pub fn ucl_object_error() -> Path {
     syn::parse_str("::uclicious::ObjectError").unwrap()
 }
 
+/// UCL ObjectRef
+pub fn ucl_object_ref_ty() -> Path {
+    syn::parse_str("::uclicious::ObjectRef").unwrap()
+}
+
+/// UCL Object
+pub fn ucl_object_ty() -> Path {
+    syn::parse_str("::uclicious::Object").unwrap()
+}
 
 pub fn as_ref_trait() -> Path {
     syn::parse_str("::std::convert::AsRef").unwrap()

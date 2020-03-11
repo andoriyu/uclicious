@@ -3,7 +3,7 @@ use std::vec::IntoIter;
 use darling::util::{Flag, PathList};
 use darling::{self};
 use syn::{Attribute, Generics, Ident, Visibility, Path};
-use crate::builder::{Builder, BuildMethod, BuilderField, IntoBuilder};
+use crate::builder::{Builder, BuildMethod, IntoBuilder, FromObject};
 use proc_macro2::Span;
 use crate::initializer::Initializer;
 use crate::parser::ParserMethods;
@@ -53,13 +53,9 @@ impl FlagVisibility for FieldMeta {
 )]
 pub struct Options {
     ident: Ident,
-
     attrs: Vec<Attribute>,
-
     vis: Visibility,
-
     generics: Generics,
-
     /// The name of the generated builder. Defaults to `#{ident}Builder`.
     #[darling(default)]
     name: Option<Ident>,
@@ -80,6 +76,9 @@ pub struct Options {
 
     #[darling(default)]
     private: Flag,
+
+    #[darling(default)]
+    skip_builder: bool,
 
     /// The parsed body of the derived struct.
     data: darling::ast::Data<darling::util::Ignored, Field>,
@@ -218,6 +217,9 @@ impl FlagVisibility for BuildFn {
 
 
 impl Options {
+    pub fn skip_builder(&self) -> bool {
+        self.skip_builder
+    }
     pub fn builder_ident(&self) -> Ident {
         if let Some(ref custom) = self.name {
             return custom.clone();
@@ -258,6 +260,17 @@ impl Options {
         FieldIter(self, self.raw_fields().into_iter())
     }
 
+    pub fn as_from_object(&self) -> FromObject {
+        FromObject {
+            target_ty: self.ident.clone(),
+            generics: Some(&self.generics),
+            initializers: Vec::with_capacity(self.field_count()),
+            default_struct: self
+                .default
+                .as_ref()
+                .map(|x| x.parse_block(false)),
+        }
+    }
     pub fn as_builder(&self) -> Builder {
         Builder {
             ident: self.builder_ident(),
@@ -320,9 +333,6 @@ pub struct FieldWithDefaults<'a> {
     field: &'a Field,
 }
 impl<'a> FieldWithDefaults<'a> {
-    pub fn field_enabled(&self) -> bool {
-        true
-    }
     /// Get the ident of the input field. This is also used as the ident of the
     /// emitted field.
     pub fn field_ident(&self) -> &syn::Ident {
@@ -332,6 +342,7 @@ impl<'a> FieldWithDefaults<'a> {
             .expect("Tuple structs are not supported")
     }
 
+    #[allow(unused)]
     pub fn field_vis(&self) -> Visibility {
         self.field
             .as_expressed_vis()
@@ -341,15 +352,7 @@ impl<'a> FieldWithDefaults<'a> {
     pub fn use_parent_default(&self) -> bool {
         self.field.default.is_none() && self.parent.default.is_some()
     }
-    pub fn as_builder_field(&'a self) -> BuilderField<'a> {
-        BuilderField {
-            field_ident: self.field_ident(),
-            field_type: &self.field.ty,
-            field_visibility: self.field_vis(),
-            attrs: &self.field.attrs,
-        }
-    }
-    /// Returns an `Initializer` according to the options.
+   /// Returns an `Initializer` according to the options.
    ///
    /// # Panics
    ///

@@ -5,8 +5,7 @@ use darling::ToTokens;
 use proc_macro2::{TokenStream, Span};
 use quote::TokenStreamExt;
 use syn::punctuated::Punctuated;
-use syn::{Path, TypeParamBound, TraitBoundModifier, TraitBound};
-use syn::token::Token;
+use syn::{Path};
 use crate::initializer::Initializer;
 
 pub struct Builder<'a> {
@@ -40,7 +39,7 @@ impl<'a> Builder<'a> {
         self
     }
     /// Add final build function to the builder
-    pub fn push_build_fn<T: ToTokens>(&mut self, f: &T) -> &mut Self {
+    pub fn push_method<T: ToTokens>(&mut self, f: &T) -> &mut Self {
         self.functions.push(quote!(#f));
         self
     }
@@ -84,32 +83,12 @@ pub struct BuildMethod<'a> {
     pub validate_fn: Option<&'a syn::Path>,
 }
 
-impl<'a> BuildMethod<'a> {
-    /// Populate the `BuildMethod` with appropriate initializers of the
-    /// underlying struct.
-    ///
-    /// For each struct field this must be called with the appropriate
-    /// initializer.
+impl<'a> FromObject<'a> {
     pub fn push_initializer(&mut self, init: Initializer) -> &mut Self {
         self.initializers.push(quote!(#init));
         self
     }
 }
-
-#[derive(Debug, Clone)]
-pub struct BuilderField<'a> {
-    /// Name of the target field.
-    pub field_ident: &'a syn::Ident,
-    /// Type of the target field.
-    ///
-    /// The corresonding builder field will be `Option<field_type>`.
-    pub field_type: &'a syn::Type,
-    /// Visibility of this builder field, e.g. `syn::Visibility::Public`.
-    pub field_visibility: syn::Visibility,
-    /// Attributes which will be attached to this builder field.
-    pub attrs: &'a [syn::Attribute],
-}
-
 
 #[derive(Debug, Clone)]
 pub struct IntoBuilder<'a> {
@@ -122,19 +101,65 @@ pub struct IntoBuilder<'a> {
     /// The corresonding builder field will be `Option<field_type>`.
     pub target_ty: &'a syn::Ident,
 }
-impl<'a> ToTokens for BuilderField<'a> {
-    fn to_tokens(&self, tokens: &mut TokenStream) {
-        let vis = &self.field_visibility;
-        let ident = self.field_ident;
-        let ty = self.field_type;
-        let attrs = self.attrs;
-        let option = bindings::option_ty();
-        tokens.append_all(quote! {
-            #(#attrs)* #ident: #option<#ty>,
-        })
-    }
+
+pub struct FromObject<'a> {
+    /// Type of the target
+    pub target_ty: syn::Ident,
+    /// Type parameters and lifetimes attached to target type
+    pub generics: Option<&'a syn::Generics>,
+    /// Field initializers for the target type.
+    pub initializers: Vec<TokenStream>,
+    /// Default value for the whole struct.
+    ///
+    /// This will be in scope for all initializers as `__default`.
+    pub default_struct: Option<Block>,
 }
 
+impl< 'a > ToTokens for FromObject < 'a > {
+    fn to_tokens( & self, tokens: & mut TokenStream) {
+        let target_ty = &self.target_ty;
+        let target_ty_generics = &self.generics;
+        let initializers = &self.initializers;
+        let default_struct = self.default_struct.as_ref().map(|default_expr| {
+            let ident = syn::Ident::new(DEFAULT_STRUCT_NAME, Span::call_site());
+            quote!(let #ident: #target_ty #target_ty_generics = #default_expr;)
+        });
+
+        let result = bindings::result_ty();
+        let error_ty = bindings::ucl_object_error();
+        let try_from = bindings::try_from_trait();
+        let try_into = bindings::try_into_trait();
+        let obj_ref_ty = bindings::ucl_object_ref_ty();
+        let obj_ty = bindings::ucl_object_ty();
+        let borrow = bindings::borrow_trait();
+        let as_ref = bindings::as_ref_trait();
+
+        let deref = bindings::deref_trait();
+        tokens.append_all(quote!(
+            impl #try_from<&#obj_ref_ty> for #target_ty #target_ty_generics {
+                type Error = #error_ty;
+                fn try_from(root: &#obj_ref_ty) -> #result<Self, Self::Error> {
+                    Ok(#target_ty {
+                            #(#initializers)*
+                    })
+                }
+            }
+            impl #try_from<#obj_ref_ty> for #target_ty #target_ty_generics {
+                type Error = #error_ty;
+                fn try_from(source: #obj_ref_ty) -> #result<Self, Self::Error> {
+                    #try_into::try_into(&source)
+                }
+            }
+            impl #try_from<#obj_ty> for #target_ty #target_ty_generics {
+                type Error = #error_ty;
+                fn try_from(source: #obj_ty) -> #result<Self, Self::Error> {
+                    let obj: &#obj_ref_ty = #borrow::borrow(&source);
+                    #try_into::try_into(obj)
+                }
+            }
+        ))
+    }
+}
 impl< 'a > ToTokens for BuildMethod < 'a > {
     fn to_tokens( & self, tokens: & mut TokenStream) {
         let ident = self.ident;
@@ -150,14 +175,15 @@ impl< 'a > ToTokens for BuildMethod < 'a > {
         let result = bindings::result_ty();
         let boxed_error = bindings::boxed_error();
         let ucl_error_ty = bindings::ucl_parser_error();
+        let ucl_obj_error_ty = bindings::ucl_object_error();
+        let try_into = bindings::try_into_trait();
+        let into = bindings::into_trait();
         tokens.append_all(quote!(
             #doc_comment
             #vis fn #ident(mut self) -> #result<#target_ty #target_ty_generics, #boxed_error> {
                 #default_struct
-                let root = self.__parser.get_object().map_err(#ucl_error_ty::boxed)?;
-                Ok(#target_ty {
-                        #(#initializers)*
-                })
+                let root = self.__parser.get_object().map_err(|e: #ucl_error_ty| e.boxed() as #boxed_error)?;
+                #try_into::try_into(root).map_err(|e: #ucl_obj_error_ty| e.boxed() as #boxed_error)
             }
         ))
     }
@@ -177,7 +203,6 @@ impl< 'a > ToTokens for Builder < 'a > {
         let functions = &self.functions;
         let derived_traits = {
             let default_trait: Path = parse_quote!(Default);
-            let clone_trait: Path = parse_quote!(Clone);
 
             let mut traits: Punctuated<&Path, Token![,]> = Default::default();
             traits.push(&default_trait);

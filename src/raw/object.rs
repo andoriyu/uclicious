@@ -48,6 +48,12 @@ pub struct  Object {
     inner: ObjectRef
 }
 
+impl AsRef<ObjectRef> for Object {
+    fn as_ref(&self) -> &ObjectRef {
+        &self.inner
+    }
+}
+
 impl Deref for Object {
     type Target = ObjectRef;
 

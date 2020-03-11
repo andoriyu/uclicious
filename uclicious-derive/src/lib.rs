@@ -15,7 +15,6 @@ use syn::{parse_macro_input, DeriveInput};
 
 mod options;
 use options::Options;
-use quote::TokenStreamExt;
 
 mod bindings;
 mod block;
@@ -41,21 +40,28 @@ fn derive_for_struct(ast: syn::DeriveInput) -> proc_macro2::TokenStream {
         }
     };
     let mut builder = opts.as_builder();
-    let mut build_fn = opts.as_build_method();
+    let build_fn = opts.as_build_method();
+    let into_builder = opts.as_into_builder();
+
+    let mut from_object = opts.as_from_object();
 
     builder.push_field(&parser::ParserField::default());
-    builder.push_build_fn(&opts.as_parser_methods());
+    builder.push_method(&opts.as_parser_methods());
     for field in opts.fields() {
-        build_fn.push_initializer(field.as_initializer());
+        from_object.push_initializer(field.as_initializer());
     }
-    builder.push_build_fn(&build_fn);
+    builder.push_method(&build_fn);
 
 
-    let into_builder = opts.as_into_builder();
-    let tokens = quote!(
-        #into_builder
-        #builder
-    );
+    let tokens = if opts.skip_builder() {
+        quote!(#from_object)
+    } else {
+        quote!(
+            #from_object
+            #into_builder
+            #builder
+        )
+    };
     //panic!(tokens.to_string());
     tokens
 }

@@ -39,7 +39,7 @@ impl<'a> ToTokens for Initializer<'a> {
         tokens.append_all(quote!(
                 #struct_field: match root.lookup_path(#lookup_path) {
                     Some(obj) => {
-                        #try_into::try_into(obj).map_err(#obj_error_ty::boxed)?
+                        #try_into::try_into(obj)?
                     },
                     #match_none
                 },
