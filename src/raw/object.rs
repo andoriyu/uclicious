@@ -23,6 +23,12 @@ pub enum ObjectError {
 
 impl Error for ObjectError {}
 
+impl ObjectError {
+    pub fn boxed(self) -> Box<ObjectError> {
+        Box::new(self)
+    }
+}
+
 impl fmt::Display for ObjectError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

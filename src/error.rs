@@ -57,6 +57,12 @@ impl Error for UclError {
     }
 }
 
+impl UclError {
+    pub fn boxed(self) -> Box<UclError> {
+        Box::new(self)
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum UclSchemaErrorType {
     Ok,

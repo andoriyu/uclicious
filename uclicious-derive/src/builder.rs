@@ -7,6 +7,7 @@ use quote::TokenStreamExt;
 use syn::punctuated::Punctuated;
 use syn::{Path, TypeParamBound, TraitBoundModifier, TraitBound};
 use syn::token::Token;
+use crate::initializer::Initializer;
 
 pub struct Builder<'a> {
     /// Name of this builder struct.
@@ -39,7 +40,7 @@ impl<'a> Builder<'a> {
         self
     }
     /// Add final build function to the builder
-    pub fn push_build_fn(&mut self, f: BuildMethod) -> &mut Self {
+    pub fn push_build_fn<T: ToTokens>(&mut self, f: &T) -> &mut Self {
         self.functions.push(quote!(#f));
         self
     }
@@ -83,6 +84,18 @@ pub struct BuildMethod<'a> {
     pub validate_fn: Option<&'a syn::Path>,
 }
 
+impl<'a> BuildMethod<'a> {
+    /// Populate the `BuildMethod` with appropriate initializers of the
+    /// underlying struct.
+    ///
+    /// For each struct field this must be called with the appropriate
+    /// initializer.
+    pub fn push_initializer(&mut self, init: Initializer) -> &mut Self {
+        self.initializers.push(quote!(#init));
+        self
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct BuilderField<'a> {
     /// Name of the target field.
@@ -97,6 +110,18 @@ pub struct BuilderField<'a> {
     pub attrs: &'a [syn::Attribute],
 }
 
+
+#[derive(Debug, Clone)]
+pub struct IntoBuilder<'a> {
+    /// Name of this build fn.
+    pub ident: syn::Ident,
+    /// Visibility of the build method, e.g. `syn::Visibility::Public`.
+    pub visibility: syn::Visibility,
+    /// Type of the target field.
+    ///
+    /// The corresonding builder field will be `Option<field_type>`.
+    pub target_ty: &'a syn::Ident,
+}
 impl<'a> ToTokens for BuilderField<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let vis = &self.field_visibility;
@@ -123,12 +148,16 @@ impl< 'a > ToTokens for BuildMethod < 'a > {
             quote!(let #ident: #target_ty #target_ty_generics = #default_expr;)
         });
         let result = bindings::result_ty();
-        let string = bindings::string_ty();
+        let boxed_error = bindings::boxed_error();
+        let ucl_error_ty = bindings::ucl_parser_error();
         tokens.append_all(quote!(
             #doc_comment
-            #vis fn #ident(self) -> #result<#target_ty #target_ty_generics #string> {
+            #vis fn #ident(mut self) -> #result<#target_ty #target_ty_generics, #boxed_error> {
                 #default_struct
-                unimplemented!()
+                let root = self.__parser.get_object().map_err(#ucl_error_ty::boxed)?;
+                Ok(#target_ty {
+                        #(#initializers)*
+                })
             }
         ))
     }
@@ -167,5 +196,29 @@ impl< 'a > ToTokens for Builder < 'a > {
                     #(#functions)*
                 }
             ));
+    }
+}
+
+
+impl<'a> ToTokens for IntoBuilder<'a> {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let builder_vis = &self.visibility;
+        let builder_ident = &self.ident;
+        let target = &self.target_ty;
+        let parser = bindings::ucl_parser();
+        tokens.append_all(quote!(
+        impl #target {
+            #builder_vis fn builder() -> #builder_ident {
+                #builder_ident::default()
+            }
+
+            #builder_vis fn builder_with_parser(parser: #parser) -> #builder_ident {
+                #builder_ident {
+                    __parser: parser,
+                }
+            }
+        }
+        ));
+
     }
 }

@@ -3,8 +3,10 @@ use std::vec::IntoIter;
 use darling::util::{Flag, PathList};
 use darling::{self};
 use syn::{Attribute, Generics, Ident, Visibility, Path};
-use crate::builder::{Builder, BuildMethod, BuilderField};
+use crate::builder::{Builder, BuildMethod, BuilderField, IntoBuilder};
 use proc_macro2::Span;
+use crate::initializer::Initializer;
+use crate::parser::ParserMethods;
 
 trait FlagVisibility {
     fn public(&self) -> &Flag;
@@ -100,6 +102,8 @@ pub struct Field {
     private: Flag,
     #[darling(default)]
     default: Option<DefaultExpression>,
+    #[darling(default)]
+    path: Option<String>,
 }
 impl FlagVisibility for Field {
     fn public(&self) -> &Flag {
@@ -108,6 +112,16 @@ impl FlagVisibility for Field {
 
     fn private(&self) -> &Flag {
         &self.private
+    }
+}
+
+impl Field {
+    fn get_lookup_key(&self) -> String {
+        match (&self.ident, &self.path) {
+            (_, Some(path)) => path.clone(),
+            (Some(ident), None) => ident.clone().to_string(),
+            (_,_) => panic!("Can't figure out key path")
+        }
     }
 }
 
@@ -270,6 +284,19 @@ impl Options {
             validate_fn: self.build_fn.validate.as_ref(),
         }
     }
+    pub fn as_parser_methods(&self) -> ParserMethods {
+        ParserMethods {
+            visibility: self.build_method_vis()
+        }
+    }
+
+    pub fn as_into_builder(&self) -> IntoBuilder {
+        IntoBuilder {
+            ident: self.builder_ident(),
+            visibility: self.build_method_vis(),
+            target_ty: &self.ident,
+        }
+    }
 }
 
 pub struct FieldIter<'a>(&'a Options, IntoIter<&'a Field>);
@@ -320,6 +347,23 @@ impl<'a> FieldWithDefaults<'a> {
             field_type: &self.field.ty,
             field_visibility: self.field_vis(),
             attrs: &self.field.attrs,
+        }
+    }
+    /// Returns an `Initializer` according to the options.
+   ///
+   /// # Panics
+   ///
+   /// if `default_expression` can not be parsed as `Block`.
+    pub fn as_initializer(&'a self) -> Initializer<'a> {
+        Initializer {
+            field_ident: self.field_ident(),
+            default_value: self
+                .field
+                .default
+                .as_ref()
+                .map(|x| x.parse_block(false)),
+            use_default_struct: self.use_parent_default(),
+            lookup_path: self.field.get_lookup_key(),
         }
     }
 }

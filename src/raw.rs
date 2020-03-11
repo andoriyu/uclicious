@@ -6,6 +6,7 @@ pub mod iterator;
 
 pub use priority::Priority;
 pub use parser::Parser;
+pub use object::{ObjectError,Object,ObjectRef};
 
 pub type DuplicateStrategy = libucl_bind::ucl_duplicate_strategy;
 pub const DEFAULT_DUPLICATE_STRATEGY:DuplicateStrategy = DuplicateStrategy::UCL_DUPLICATE_APPEND;

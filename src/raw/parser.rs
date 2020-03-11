@@ -67,7 +67,6 @@ impl Parser {
         }
     }
 
-    #[doc(cfg(unix))]
     #[cfg(unix)]
     pub fn add_fd_full<F: AsRawFd>(&mut self, fd: F, priority: Priority, strategy: DuplicateStrategy) -> Result<(), error::UclError> {
         let file_fd = fd.as_raw_fd();
