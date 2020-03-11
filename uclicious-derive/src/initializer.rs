@@ -79,6 +79,7 @@ enum MatchNone<'a> {
 impl<'a> ToTokens for MatchNone<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let obj_error_ty = bindings::ucl_object_error();
+        let boxed_error = bindings::boxed_error();
         match *self {
             MatchNone::DefaultTo(expr) => tokens.append_all(quote!(
                 None => #expr
@@ -90,7 +91,7 @@ impl<'a> ToTokens for MatchNone<'a> {
                 ))
             }
             MatchNone::ReturnError(ref err) => tokens.append_all(quote!(
-                None => return ::std::result::Result::Err(#obj_error_ty::KeyNotFound(#err).boxed())
+                None => return ::std::result::Result::Err(#obj_error_ty::KeyNotFound(#err.to_string()))
             )),
         }
     }

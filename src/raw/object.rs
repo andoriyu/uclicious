@@ -2,7 +2,7 @@ use libucl_bind::{ucl_object_t, ucl_type_t, ucl_object_type, ucl_object_lookup, 
 use crate::raw::{utils, Priority};
 use std::error::Error;
 use std::fmt;
-use std::convert::TryFrom;
+use std::convert::{TryFrom, TryInto};
 use crate::raw::iterator::{IterMut, Iter, IntoIter};
 use bitflags::_core::fmt::Formatter;
 use std::ffi::{CStr};
@@ -10,6 +10,7 @@ use std::ops::{Deref, DerefMut};
 use std::mem::MaybeUninit;
 use std::borrow::ToOwned;
 use bitflags::_core::borrow::Borrow;
+use std::num::TryFromIntError;
 
 /// Errors that could be returned by `Object` or `ObjectRef` functions.
 #[derive(Eq, PartialEq, Debug, Clone)]
@@ -19,6 +20,7 @@ pub enum ObjectError {
     ///
     /// NOTE: Error only returned when conversion is done by `TryFrom` trait. Built-in functions return `None`.
     WrongType { key: String, actual_type: ucl_type_t, wanted_type: ucl_type_t},
+    IntConversionError(TryFromIntError)
 }
 
 impl Error for ObjectError {}
@@ -26,6 +28,12 @@ impl Error for ObjectError {}
 impl ObjectError {
     pub fn boxed(self) -> Box<ObjectError> {
         Box::new(self)
+    }
+}
+
+impl From<TryFromIntError> for ObjectError {
+    fn from(source: TryFromIntError) -> Self {
+        ObjectError::IntConversionError(source)
     }
 }
 
@@ -38,6 +46,9 @@ impl fmt::Display for ObjectError {
             ObjectError::WrongType {key, actual_type,wanted_type} => {
                 write!(f, "Key \"{}\" actual type is {:?} and not {:?}", key, actual_type, wanted_type)
             },
+            ObjectError::IntConversionError(e) => {
+                e.fmt(f)
+            }
         }
     }
 }
@@ -324,6 +335,125 @@ impl TryFrom<ObjectRef> for i64 {
     fn try_from(value: ObjectRef) -> Result<Self, Self::Error> {
         if let Some(ret) = value.as_i64() {
             Ok(ret)
+        } else {
+            let err = ObjectError::WrongType {
+                key: value.key().unwrap_or_default(),
+                actual_type: value.kind,
+                wanted_type: ucl_type_t::UCL_INT
+            };
+            Err(err)
+        }
+    }
+}
+
+impl TryFrom<ObjectRef> for u64 {
+    type Error = ObjectError;
+
+    fn try_from(value: ObjectRef) -> Result<Self, Self::Error> {
+        if let Some(val) = value.as_i64() {
+            val.try_into().map_err(ObjectError::from)
+        } else {
+            let err = ObjectError::WrongType {
+                key: value.key().unwrap_or_default(),
+                actual_type: value.kind,
+                wanted_type: ucl_type_t::UCL_INT
+            };
+            Err(err)
+        }
+    }
+}
+
+impl TryFrom<ObjectRef> for i32 {
+    type Error = ObjectError;
+
+    fn try_from(value: ObjectRef) -> Result<Self, Self::Error> {
+        if let Some(val) = value.as_i64() {
+            val.try_into().map_err(ObjectError::from)
+        } else {
+            let err = ObjectError::WrongType {
+                key: value.key().unwrap_or_default(),
+                actual_type: value.kind,
+                wanted_type: ucl_type_t::UCL_INT
+            };
+            Err(err)
+        }
+    }
+}
+
+impl TryFrom<ObjectRef> for u32 {
+    type Error = ObjectError;
+
+    fn try_from(value: ObjectRef) -> Result<Self, Self::Error> {
+        if let Some(val) = value.as_i64() {
+            val.try_into().map_err(ObjectError::from)
+        } else {
+            let err = ObjectError::WrongType {
+                key: value.key().unwrap_or_default(),
+                actual_type: value.kind,
+                wanted_type: ucl_type_t::UCL_INT
+            };
+            Err(err)
+        }
+    }
+}
+
+impl TryFrom<ObjectRef> for i16 {
+    type Error = ObjectError;
+
+    fn try_from(value: ObjectRef) -> Result<Self, Self::Error> {
+        if let Some(val) = value.as_i64() {
+            val.try_into().map_err(ObjectError::from)
+        } else {
+            let err = ObjectError::WrongType {
+                key: value.key().unwrap_or_default(),
+                actual_type: value.kind,
+                wanted_type: ucl_type_t::UCL_INT
+            };
+            Err(err)
+        }
+    }
+}
+
+impl TryFrom<ObjectRef> for u16 {
+    type Error = ObjectError;
+
+    fn try_from(value: ObjectRef) -> Result<Self, Self::Error> {
+        if let Some(val) = value.as_i64() {
+            val.try_into().map_err(ObjectError::from)
+        } else {
+            let err = ObjectError::WrongType {
+                key: value.key().unwrap_or_default(),
+                actual_type: value.kind,
+                wanted_type: ucl_type_t::UCL_INT
+            };
+            Err(err)
+        }
+    }
+}
+
+impl TryFrom<ObjectRef> for i8 {
+    type Error = ObjectError;
+
+    fn try_from(value: ObjectRef) -> Result<Self, Self::Error> {
+        if let Some(val) = value.as_i64() {
+            val.try_into().map_err(ObjectError::from)
+        } else {
+            let err = ObjectError::WrongType {
+                key: value.key().unwrap_or_default(),
+                actual_type: value.kind,
+                wanted_type: ucl_type_t::UCL_INT
+            };
+            Err(err)
+        }
+    }
+}
+
+impl TryFrom<ObjectRef> for u8 {
+    type Error = ObjectError;
+
+    fn try_from(value: ObjectRef) -> Result<Self, Self::Error> {
+        if let Some(val) = value.as_i64() {
+            val.try_into().map_err(ObjectError::from)
         } else {
             let err = ObjectError::WrongType {
                 key: value.key().unwrap_or_default(),
