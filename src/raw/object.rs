@@ -11,6 +11,9 @@ use std::mem::MaybeUninit;
 use std::borrow::ToOwned;
 use bitflags::_core::borrow::Borrow;
 use std::num::TryFromIntError;
+use bitflags::_core::convert::Infallible;
+use std::path::PathBuf;
+use std::net::{AddrParseError, SocketAddr};
 
 /// Errors that could be returned by `Object` or `ObjectRef` functions.
 #[derive(Eq, PartialEq, Debug, Clone)]
@@ -20,7 +23,9 @@ pub enum ObjectError {
     ///
     /// NOTE: Error only returned when conversion is done by `TryFrom` trait. Built-in functions return `None`.
     WrongType { key: String, actual_type: ucl_type_t, wanted_type: ucl_type_t},
-    IntConversionError(TryFromIntError)
+    IntConversionError(TryFromIntError),
+    AddrParseError(AddrParseError),
+    None,
 }
 
 impl Error for ObjectError {}
@@ -30,7 +35,17 @@ impl ObjectError {
         Box::new(self)
     }
 }
+impl From<Infallible> for ObjectError {
+    fn from(_: Infallible) -> Self {
+        ObjectError::None
+    }
+}
 
+impl From<AddrParseError> for ObjectError {
+    fn from(source: AddrParseError) -> Self {
+        ObjectError::AddrParseError(source)
+    }
+}
 impl From<TryFromIntError> for ObjectError {
     fn from(source: TryFromIntError) -> Self {
         ObjectError::IntConversionError(source)
@@ -48,7 +63,11 @@ impl fmt::Display for ObjectError {
             },
             ObjectError::IntConversionError(e) => {
                 e.fmt(f)
-            }
+            },
+            ObjectError::AddrParseError(e) => {
+                e.fmt(f)
+            },
+            ObjectError::None => {write!(f, "Impossible error was possible after all.")}
         }
     }
 }
@@ -533,6 +552,61 @@ impl TryFrom<ObjectRef> for String {
     }
 }
 
+impl TryFrom<ObjectRef> for PathBuf {
+    type Error = ObjectError;
+
+    fn try_from(value: ObjectRef) -> Result<Self, Self::Error> {
+        if let Some(ret) = value.as_string() {
+            Ok(ret.into())
+        } else {
+            let err = ObjectError::WrongType {
+                key: value.key().unwrap_or_default(),
+                actual_type: value.kind,
+                wanted_type: ucl_type_t::UCL_STRING
+            };
+            Err(err)
+        }
+    }
+}
+
+impl TryFrom<ObjectRef> for SocketAddr {
+    type Error = ObjectError;
+
+    fn try_from(value: ObjectRef) -> Result<Self, Self::Error> {
+        if let Some(ret) = value.as_string() {
+            ret.parse().map_err(ObjectError::from)
+        } else {
+            let err = ObjectError::WrongType {
+                key: value.key().unwrap_or_default(),
+                actual_type: value.kind,
+                wanted_type: ucl_type_t::UCL_STRING
+            };
+            Err(err)
+        }
+    }
+}
+impl<T> TryFrom<ObjectRef> for Vec<T> where T: TryFrom<ObjectRef, Error = ObjectError> {
+    type Error = ObjectError;
+
+    fn try_from(value: ObjectRef) -> Result<Self, Self::Error> {
+        if ucl_type_t::UCL_ARRAY == value.kind {
+            let ret: Vec<Result<T, ObjectError>> = value.iter()
+                .map(T::try_from)
+                .collect();
+            if let Some(Err(e)) = ret.iter().find(|e| e.is_err()) {
+                Err(e.clone())
+            } else {
+                let list: Vec<T> = ret.into_iter()
+                    .map(Result::unwrap)
+                    .collect();
+                Ok(list)
+            }
+        } else {
+            value.try_into().map(|e| vec![e])
+        }
+    }
+}
+
 impl fmt::Debug for ObjectRef {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let ptr = unsafe {
@@ -554,30 +628,5 @@ impl ToOwned for ObjectRef {
             ucl_object_ref(self.as_ptr())
         };
         Object::from_c_ptr(ptr).expect("Got ObjectRef with null ptr")
-    }
-}
-
-impl<'data> IntoIterator for &'data mut ObjectRef {
-    type Item = ObjectRef;
-    type IntoIter = IterMut<'data>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        IterMut::new(self)
-    }
-}
-impl<'data> IntoIterator for &'data ObjectRef {
-    type Item = ObjectRef;
-    type IntoIter = Iter<'data>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        Iter::new(self)
-    }
-}
-impl<'data> IntoIterator for ObjectRef {
-    type Item = ObjectRef;
-    type IntoIter = IntoIter;
-
-    fn into_iter(self) -> Self::IntoIter {
-        IntoIter::new(self)
     }
 }

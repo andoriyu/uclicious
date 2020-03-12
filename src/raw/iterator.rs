@@ -118,3 +118,27 @@ impl Drop for IntoIter {
     }
 }
 
+impl<'data> IntoIterator for &'data mut ObjectRef {
+    type Item = ObjectRef;
+    type IntoIter = IterMut<'data>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        IterMut::new(self)
+    }
+}
+impl<'data> IntoIterator for &'data ObjectRef {
+    type Item = ObjectRef;
+    type IntoIter = Iter<'data>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        Iter::new(self)
+    }
+}
+impl<'data> IntoIterator for ObjectRef {
+    type Item = ObjectRef;
+    type IntoIter = IntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        IntoIter::new(self)
+    }
+}
