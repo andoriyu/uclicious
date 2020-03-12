@@ -33,7 +33,6 @@ impl<'a> ToTokens for Initializer<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let struct_field = &self.field_ident;
         let lookup_path = &self.lookup_path;
-        let obj_error_ty = bindings::ucl_object_error();
         let from_object = bindings::from_object_trait();
         let match_none = self.match_none();
         tokens.append_all(quote!(
@@ -79,7 +78,6 @@ enum MatchNone<'a> {
 impl<'a> ToTokens for MatchNone<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let obj_error_ty = bindings::ucl_object_error();
-        let boxed_error = bindings::boxed_error();
         match *self {
             MatchNone::DefaultTo(expr) => tokens.append_all(quote!(
                 None => #expr

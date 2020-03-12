@@ -128,13 +128,10 @@ impl< 'a > ToTokens for FromObject < 'a > {
         let result = bindings::result_ty();
         let error_ty = bindings::ucl_object_error();
         let try_from = bindings::from_object_trait();
-        let try_into = bindings::try_into_trait();
         let obj_ref_ty = bindings::ucl_object_ref_ty();
         let obj_ty = bindings::ucl_object_ty();
         let borrow = bindings::borrow_trait();
-        let as_ref = bindings::as_ref_trait();
 
-        let deref = bindings::deref_trait();
         tokens.append_all(quote!(
             impl #try_from<&#obj_ref_ty> for #target_ty #target_ty_generics {
                 fn try_from(root: &#obj_ref_ty) -> #result<Self, #error_ty> {
@@ -163,7 +160,6 @@ impl< 'a > ToTokens for BuildMethod < 'a > {
         let vis = &self.visibility;
         let target_ty = &self.target_ty;
         let target_ty_generics = &self.target_ty_generics;
-        let initializers = &self.initializers;
         let doc_comment = &self.doc_comment;
         let default_struct = self.default_struct.as_ref().map(|default_expr| {
             let ident = syn::Ident::new(DEFAULT_STRUCT_NAME, Span::call_site());
@@ -173,8 +169,6 @@ impl< 'a > ToTokens for BuildMethod < 'a > {
         let boxed_error = bindings::boxed_error();
         let ucl_error_ty = bindings::ucl_parser_error();
         let ucl_obj_error_ty = bindings::ucl_object_error();
-        let try_into = bindings::try_into_trait();
-        let into = bindings::into_trait();
         let from_obj = bindings::from_object_trait();
         tokens.append_all(quote!(
             #doc_comment

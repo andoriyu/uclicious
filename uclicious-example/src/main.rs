@@ -2,6 +2,7 @@ use uclicious_derive::Uclicious;
 use uclicious::*;
 use std::path::PathBuf;
 use std::net::SocketAddr;
+use std::collections::HashMap;
 
 #[derive(Debug,Uclicious)]
 pub struct Connection {
@@ -20,6 +21,7 @@ pub struct Connection {
     hosts: Vec<String>,
     #[ucl(default)]
     option: Option<String>,
+    gates: HashMap<String, bool>,
 }
 
 #[derive(Debug, Uclicious)]
@@ -44,6 +46,11 @@ fn main() {
     }
      subsection {
         host = [host1, host2]
+    }
+    gates {
+        feature_1 = on
+        feature_2 = off
+        feature_3 = on
     }
     "#;
 

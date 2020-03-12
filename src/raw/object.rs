@@ -3,7 +3,7 @@ use crate::raw::{utils, Priority};
 use std::error::Error;
 use std::fmt;
 use std::convert::{TryInto};
-use crate::raw::iterator::{IterMut, Iter, IntoIter};
+use crate::raw::iterator::{Iter};
 use bitflags::_core::fmt::Formatter;
 use std::ffi::{CStr};
 use std::ops::{Deref, DerefMut};
@@ -15,6 +15,7 @@ use bitflags::_core::convert::Infallible;
 use std::path::PathBuf;
 use std::net::{AddrParseError, SocketAddr};
 use crate::from_object::FromObject;
+use std::collections::HashMap;
 
 /// Errors that could be returned by `Object` or `ObjectRef` functions.
 #[derive(Eq, PartialEq, Debug, Clone)]
@@ -581,6 +582,30 @@ impl<T> FromObject<ObjectRef> for Vec<T> where T: FromObject<ObjectRef> {
 impl<T> FromObject<ObjectRef> for Option<T> where T: FromObject<ObjectRef> {
     fn try_from(value: ObjectRef) -> Result<Self, ObjectError> {
         (T::try_from(value)).map(|e| Some(e))
+    }
+}
+
+impl<T> FromObject<ObjectRef> for HashMap<String, T> where T: FromObject<ObjectRef> + Clone {
+    fn try_from(value: ObjectRef) -> Result<Self, ObjectError> {
+        if ucl_type_t::UCL_OBJECT != value.kind {
+            return Err(ObjectError::WrongType {
+                key: value.key().unwrap_or_default(),
+                actual_type: value.kind,
+                wanted_type: ucl_type_t::UCL_OBJECT
+            });
+        }
+        let as_entries: Vec<(String, Result<T, ObjectError>)> = value.iter()
+            .map(|obj| (obj.key().expect("Object without key!"), FromObject::try_from(obj)))
+            .collect();
+
+        if let Some((_, Err(e))) = as_entries.iter().find(|(_key, result)| result.is_err()) {
+            Err(e.clone())
+        } else {
+            Ok(as_entries.iter()
+                .cloned()
+                .map(|(key, result)| (key, result.unwrap()))
+                .collect())
+        }
     }
 }
 
