@@ -1,5 +1,7 @@
+//! Low level interface to libUCL.
+
 pub mod parser;
-pub mod utils;
+mod utils;
 pub mod priority;
 pub mod object;
 pub mod iterator;
@@ -8,10 +10,14 @@ pub use priority::Priority;
 pub use parser::Parser;
 pub use object::{ObjectError,Object,ObjectRef};
 
+/// Strategy to use when sources have duplicate keys.
 pub type DuplicateStrategy = libucl_bind::ucl_duplicate_strategy;
+/// Default strategy is append. Consult libUCL docs for more information.
 pub const DEFAULT_DUPLICATE_STRATEGY:DuplicateStrategy = DuplicateStrategy::UCL_DUPLICATE_APPEND;
 
+/// Parser flags.
 pub type ParserFlags = libucl_bind::ucl_parser_flags;
+#[doc(hidden)]
 pub const DEFAULT_PARSER_FLAG: ParserFlags = ParserFlags::UCL_PARSER_DEFAULT;
 
 

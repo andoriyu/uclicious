@@ -1,3 +1,4 @@
+//! Source priority. Consult libUCL documentation for more information.
 use std::os::raw::c_uint;
 /// Priorities are used by UCL parser to manage the policy of objects rewriting during including other files as following:
 /// - If we have two objects with the same priority then we form an implicit array

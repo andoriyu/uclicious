@@ -1,3 +1,5 @@
+//! Iterators for `ObjectRef`.
+
 use super::object::ObjectRef;
 use libucl_bind::{ucl_object_iterate_new, ucl_object_iterate_safe, ucl_object_iterate_free};
 
@@ -57,6 +59,7 @@ impl<'data> Iter<'data> {
     }
 }
 
+/// Main iterator that you should use.
 impl<'data> Iterator for Iter<'data> {
     type Item = ObjectRef;
 

@@ -1,4 +1,5 @@
-/* Based on https://github.com/draft6/libucl-rs */
+//! Low level library that could be returned by the parser.
+//! Based on https://github.com/draft6/libucl-rs
 
 use std::error::Error;
 use std::fmt;

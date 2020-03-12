@@ -1,3 +1,4 @@
+//! Output of the parser.
 use libucl_bind::{ucl_object_t, ucl_type_t, ucl_object_type, ucl_object_lookup, ucl_object_unref, ucl_object_get_priority, ucl_object_key, ucl_object_fromint, ucl_object_fromdouble, ucl_object_frombool, ucl_object_lookup_path, ucl_object_tostring_forced, ucl_object_tostring_safe, ucl_object_toint_safe, ucl_object_ref, ucl_object_todouble_safe, ucl_object_toboolean_safe, ucl_object_fromstring};
 use crate::raw::{utils, Priority};
 use std::error::Error;
@@ -25,8 +26,11 @@ pub enum ObjectError {
     ///
     /// NOTE: Error only returned when conversion is done by `FromObject` trait. Built-in functions return `None`.
     WrongType { key: String, actual_type: ucl_type_t, wanted_type: ucl_type_t},
+    /// Wrapper around `TryFromIntError`.
     IntConversionError(TryFromIntError),
+    /// Wrapper around `AddrParseError`.
     AddrParseError(AddrParseError),
+    /// Not an error, but required for some conversions.
     None,
 }
 
@@ -76,6 +80,7 @@ impl fmt::Display for ObjectError {
 
 
 /// Owned and mutable instance of UCL Object.
+/// All methods that do not require mutability should be implemented on `ObjectRef` instead.
 pub struct  Object {
     inner: ObjectRef
 }
@@ -139,16 +144,18 @@ impl Borrow<ObjectRef> for Object {
 }
 
 /// An immutable reference to UCL Object structure.
+/// Provides most of the libUCL interface for interacting with parser results.
 pub struct ObjectRef {
     object: *mut ucl_object_t,
     kind: ucl_type_t,
 }
 
 impl ObjectRef {
+    /// Return mutable pointer to inner struct.
     pub fn as_mut_ptr(&mut self) -> *mut ucl_object_t {
         self.object
     }
-
+    /// Return const pointer to inner struct.
     pub fn as_ptr(&self) -> *const ucl_object_t {
         self.object
     }
@@ -165,30 +172,37 @@ impl ObjectRef {
         Some(result)
     }
 
+    /// Returns `true` if this object is a null.
     pub fn is_null(&self) -> bool {
         self.kind == ucl_type_t::UCL_NULL
     }
 
+    /// Returns `true` if this object is an object (think hashmap).
     pub fn is_object(&self) -> bool {
         self.kind == ucl_type_t::UCL_OBJECT
     }
 
+    /// Returns `true` if this object is a string.
     pub fn is_string(&self) -> bool {
         self.kind == ucl_type_t::UCL_STRING
     }
 
+    /// Returns `true` if this object is an integer.
     pub fn is_integer(&self) -> bool {
         self.kind == ucl_type_t::UCL_INT
     }
 
+    /// Returns `true` if this object is a float.
     pub fn is_float(&self) -> bool {
         self.kind == ucl_type_t::UCL_FLOAT
     }
 
+    /// Returns `true` if this object is a boolean type.
     pub fn is_boolean(&self) -> bool {
         self.kind == ucl_type_t::UCL_BOOLEAN
     }
 
+    /// Returns `true` if this object is an array.
     pub fn is_array(&self) -> bool {
         self.kind == ucl_type_t::UCL_ARRAY
     }
@@ -237,7 +251,7 @@ impl ObjectRef {
         };
         ObjectRef::from_c_ptr(obj as *mut ucl_object_t)
     }
-    /// Return string value
+    /// Return string value or None.
     pub fn as_string(&self) -> Option<String> {
 
         if !self.is_string() { return None }
@@ -253,6 +267,7 @@ impl ObjectRef {
         }
     }
 
+    /// Return an integer value or None.
     pub fn as_i64(&self) -> Option<i64> {
         if !self.is_integer() {
             return None
@@ -269,6 +284,7 @@ impl ObjectRef {
         }
     }
 
+    /// Return a float value or None.
     pub fn as_f64(&self) -> Option<f64> {
         if !self.is_float() {
             return None;
@@ -285,6 +301,7 @@ impl ObjectRef {
         }
     }
 
+    /// Return a boolean value or None.
     pub fn as_bool(&self) -> Option<bool> {
         if !self.is_boolean() {
             return None;
@@ -301,6 +318,7 @@ impl ObjectRef {
         }
     }
 
+    /// Return `()` or None.
     pub fn as_null(&self) -> Option<()> {
         if !self.is_null() {
             return None;

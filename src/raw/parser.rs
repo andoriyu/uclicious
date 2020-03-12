@@ -1,3 +1,19 @@
+//! Safe wrapper for libUCL parser.
+//! ## Usage
+//! ```no_run
+//! use uclicious::*;
+//! use std::path::PathBuf;
+//! let mut parser = Parser::default();
+//! let input = r#"
+//! test_string = "no scope"
+//! "#;
+//! let jails_conf = PathBuf::from("/etc/jails.conf");
+//! parser.add_chunk_full("enabled = false", Priority::default(), DEFAULT_DUPLICATE_STRATEGY).unwrap();
+//! parser.add_file_full(&jails_conf, Priority::new(15), DEFAULT_DUPLICATE_STRATEGY).unwrap();
+//! parser.set_filevars(&jails_conf, true);
+//!
+//! let result = parser.get_object().unwrap();
+//! ```
 use libucl_bind::{ucl_parser, ucl_parser_new, ucl_parser_get_error_code, ucl_parser_get_error, ucl_parser_add_chunk_full, ucl_parse_type, ucl_parser_add_file_full, ucl_parser_free, ucl_parser_get_object, ucl_parser_add_fd_full, ucl_parser_set_filevars};
 use crate::raw::{Priority, DuplicateStrategy};
 
