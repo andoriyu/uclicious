@@ -16,23 +16,23 @@ buffer_size = 1KB
 "#;
 parser.add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY).unwrap();
 let result = parser.get_object().unwrap();
-//!
+
 let lookup_result = result.lookup("test_string").unwrap().as_string().unwrap();
 assert_eq!(lookup_result.as_str(), "no scope");
-//!
+
 let lookup_result = result.lookup("a_float").unwrap().as_f64().unwrap();
 assert_eq!(lookup_result, 3.14f64);
-//!
+
 let lookup_result = result.lookup("an_integer").unwrap().as_i64().unwrap();
 assert_eq!(lookup_result, 69420i64);
-//!
+
 let lookup_result = result.lookup("is_it_good").unwrap().as_bool().unwrap();
 assert_eq!(lookup_result, true);
-//!
+
 let lookup_result = result.lookup("buffer_size").unwrap().as_i64().unwrap();
 assert_eq!(lookup_result, 1024);
 ```
-//!
+
 In order to get around rust rules library implemets it's own trait [FromObject](from_object/trait.FromObject.html) for most of basics types:
 ```rust
 use uclicious::*;
@@ -46,20 +46,20 @@ buffer_size = 1KB
 "#;
 parser.add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY).unwrap();
 let result = parser.get_object().unwrap();
-//!
+
 let lookup_result = result.lookup("is_it_good").unwrap();
 let maybe: Option<bool> = FromObject::try_from(lookup_result).unwrap();
 assert_eq!(Some(true), maybe);
 ```
 ### Automatic Derive
-//!
+
 On top of "raw" interface to libUCL, Uclicious provides an easy way to derive constructor for strucs:
 ```rust
 use uclicious::*;
 use std::path::PathBuf;
 use std::net::SocketAddr;
 use std::collections::HashMap;
-//!
+
 #[derive(Debug,Uclicious)]
 struct Connection {
    #[ucl(default)]
@@ -79,14 +79,14 @@ struct Connection {
    option: Option<String>,
    gates: HashMap<String, bool>,
 }
-//!
+
 #[derive(Debug,Uclicious)]
 #[ucl(skip_builder)]
 struct Extra {
    enabled: bool
 }
 let mut builder = Connection::builder();
-//!
+
 let input = r#"
     enabled = yes
     host = "some.fake.url"
@@ -105,7 +105,7 @@ let input = r#"
         feature_2 = off
         feature_3 = on
    }"#;
-//!
+
 builder.add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY).unwrap();
 let connection: Connection = builder.build().unwrap();
 ```
