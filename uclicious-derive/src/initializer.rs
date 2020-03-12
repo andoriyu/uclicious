@@ -34,12 +34,12 @@ impl<'a> ToTokens for Initializer<'a> {
         let struct_field = &self.field_ident;
         let lookup_path = &self.lookup_path;
         let obj_error_ty = bindings::ucl_object_error();
-        let try_into = bindings::try_into_trait();
+        let from_object = bindings::from_object_trait();
         let match_none = self.match_none();
         tokens.append_all(quote!(
                 #struct_field: match root.lookup_path(#lookup_path) {
                     Some(obj) => {
-                        #try_into::try_into(obj)?
+                        #from_object::try_from(obj)?
                     },
                     #match_none
                 },

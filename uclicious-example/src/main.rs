@@ -18,6 +18,7 @@ pub struct Connection {
     extra: Extra,
     #[ucl(path = "subsection.host")]
     hosts: Vec<String>,
+    #[ucl(default)]
     option: Option<String>,
 }
 

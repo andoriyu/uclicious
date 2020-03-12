@@ -44,8 +44,8 @@ pub fn try_into_trait() -> Path {
 }
 
 /// TryFrom trait.
-pub fn try_from_trait() -> Path {
-    syn::parse_str("::std::convert::TryFrom").unwrap()
+pub fn from_object_trait() -> Path {
+    syn::parse_str("::uclicious::FromObject").unwrap()
 }
 
 /// Boxed error type

@@ -127,7 +127,7 @@ impl< 'a > ToTokens for FromObject < 'a > {
 
         let result = bindings::result_ty();
         let error_ty = bindings::ucl_object_error();
-        let try_from = bindings::try_from_trait();
+        let try_from = bindings::from_object_trait();
         let try_into = bindings::try_into_trait();
         let obj_ref_ty = bindings::ucl_object_ref_ty();
         let obj_ty = bindings::ucl_object_ty();
@@ -137,24 +137,21 @@ impl< 'a > ToTokens for FromObject < 'a > {
         let deref = bindings::deref_trait();
         tokens.append_all(quote!(
             impl #try_from<&#obj_ref_ty> for #target_ty #target_ty_generics {
-                type Error = #error_ty;
-                fn try_from(root: &#obj_ref_ty) -> #result<Self, Self::Error> {
+                fn try_from(root: &#obj_ref_ty) -> #result<Self, #error_ty> {
                     Ok(#target_ty {
                             #(#initializers)*
                     })
                 }
             }
             impl #try_from<#obj_ref_ty> for #target_ty #target_ty_generics {
-                type Error = #error_ty;
-                fn try_from(source: #obj_ref_ty) -> #result<Self, Self::Error> {
-                    #try_into::try_into(&source)
+                fn try_from(source: #obj_ref_ty) -> #result<Self, #error_ty> {
+                    #try_from::try_from(&source)
                 }
             }
             impl #try_from<#obj_ty> for #target_ty #target_ty_generics {
-                type Error = #error_ty;
-                fn try_from(source: #obj_ty) -> #result<Self, Self::Error> {
+                fn try_from(source: #obj_ty) -> #result<Self, #error_ty> {
                     let obj: &#obj_ref_ty = #borrow::borrow(&source);
-                    #try_into::try_into(obj)
+                    #try_from::try_from(obj)
                 }
             }
         ))
@@ -178,12 +175,13 @@ impl< 'a > ToTokens for BuildMethod < 'a > {
         let ucl_obj_error_ty = bindings::ucl_object_error();
         let try_into = bindings::try_into_trait();
         let into = bindings::into_trait();
+        let from_obj = bindings::from_object_trait();
         tokens.append_all(quote!(
             #doc_comment
             #vis fn #ident(mut self) -> #result<#target_ty #target_ty_generics, #boxed_error> {
                 #default_struct
                 let root = self.__parser.get_object().map_err(|e: #ucl_error_ty| e.boxed() as #boxed_error)?;
-                #try_into::try_into(root).map_err(|e: #ucl_obj_error_ty| e.boxed() as #boxed_error)
+                #from_obj::try_from(root).map_err(|e: #ucl_obj_error_ty| e.boxed() as #boxed_error)
             }
         ))
     }

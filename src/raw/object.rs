@@ -2,7 +2,7 @@ use libucl_bind::{ucl_object_t, ucl_type_t, ucl_object_type, ucl_object_lookup, 
 use crate::raw::{utils, Priority};
 use std::error::Error;
 use std::fmt;
-use std::convert::{TryFrom, TryInto};
+use std::convert::{TryInto};
 use crate::raw::iterator::{IterMut, Iter, IntoIter};
 use bitflags::_core::fmt::Formatter;
 use std::ffi::{CStr};
@@ -14,6 +14,7 @@ use std::num::TryFromIntError;
 use bitflags::_core::convert::Infallible;
 use std::path::PathBuf;
 use std::net::{AddrParseError, SocketAddr};
+use crate::from_object::FromObject;
 
 /// Errors that could be returned by `Object` or `ObjectRef` functions.
 #[derive(Eq, PartialEq, Debug, Clone)]
@@ -21,7 +22,7 @@ pub enum ObjectError {
     KeyNotFound(String),
     /// Object was found, but value type doesn't match the desired type.
     ///
-    /// NOTE: Error only returned when conversion is done by `TryFrom` trait. Built-in functions return `None`.
+    /// NOTE: Error only returned when conversion is done by `FromObject` trait. Built-in functions return `None`.
     WrongType { key: String, actual_type: ucl_type_t, wanted_type: ucl_type_t},
     IntConversionError(TryFromIntError),
     AddrParseError(AddrParseError),
@@ -348,10 +349,8 @@ impl From<&str> for Object {
     }
 }
 
-impl TryFrom<ObjectRef> for i64 {
-    type Error = ObjectError;
-
-    fn try_from(value: ObjectRef) -> Result<Self, Self::Error> {
+impl FromObject<ObjectRef> for i64 {
+    fn try_from(value: ObjectRef) -> Result<Self, ObjectError> {
         if let Some(ret) = value.as_i64() {
             Ok(ret)
         } else {
@@ -365,10 +364,8 @@ impl TryFrom<ObjectRef> for i64 {
     }
 }
 
-impl TryFrom<ObjectRef> for u64 {
-    type Error = ObjectError;
-
-    fn try_from(value: ObjectRef) -> Result<Self, Self::Error> {
+impl FromObject<ObjectRef> for u64 {
+    fn try_from(value: ObjectRef) -> Result<Self, ObjectError> {
         if let Some(val) = value.as_i64() {
             val.try_into().map_err(ObjectError::from)
         } else {
@@ -382,10 +379,8 @@ impl TryFrom<ObjectRef> for u64 {
     }
 }
 
-impl TryFrom<ObjectRef> for i32 {
-    type Error = ObjectError;
-
-    fn try_from(value: ObjectRef) -> Result<Self, Self::Error> {
+impl FromObject<ObjectRef> for i32 {
+    fn try_from(value: ObjectRef) -> Result<Self, ObjectError> {
         if let Some(val) = value.as_i64() {
             val.try_into().map_err(ObjectError::from)
         } else {
@@ -399,10 +394,8 @@ impl TryFrom<ObjectRef> for i32 {
     }
 }
 
-impl TryFrom<ObjectRef> for u32 {
-    type Error = ObjectError;
-
-    fn try_from(value: ObjectRef) -> Result<Self, Self::Error> {
+impl FromObject<ObjectRef> for u32 {
+    fn try_from(value: ObjectRef) -> Result<Self, ObjectError> {
         if let Some(val) = value.as_i64() {
             val.try_into().map_err(ObjectError::from)
         } else {
@@ -416,10 +409,8 @@ impl TryFrom<ObjectRef> for u32 {
     }
 }
 
-impl TryFrom<ObjectRef> for i16 {
-    type Error = ObjectError;
-
-    fn try_from(value: ObjectRef) -> Result<Self, Self::Error> {
+impl FromObject<ObjectRef> for i16 {
+    fn try_from(value: ObjectRef) -> Result<Self, ObjectError> {
         if let Some(val) = value.as_i64() {
             val.try_into().map_err(ObjectError::from)
         } else {
@@ -433,10 +424,8 @@ impl TryFrom<ObjectRef> for i16 {
     }
 }
 
-impl TryFrom<ObjectRef> for u16 {
-    type Error = ObjectError;
-
-    fn try_from(value: ObjectRef) -> Result<Self, Self::Error> {
+impl FromObject<ObjectRef> for u16 {
+    fn try_from(value: ObjectRef) -> Result<Self, ObjectError> {
         if let Some(val) = value.as_i64() {
             val.try_into().map_err(ObjectError::from)
         } else {
@@ -450,10 +439,8 @@ impl TryFrom<ObjectRef> for u16 {
     }
 }
 
-impl TryFrom<ObjectRef> for i8 {
-    type Error = ObjectError;
-
-    fn try_from(value: ObjectRef) -> Result<Self, Self::Error> {
+impl FromObject<ObjectRef> for i8 {
+    fn try_from(value: ObjectRef) -> Result<Self, ObjectError> {
         if let Some(val) = value.as_i64() {
             val.try_into().map_err(ObjectError::from)
         } else {
@@ -467,10 +454,8 @@ impl TryFrom<ObjectRef> for i8 {
     }
 }
 
-impl TryFrom<ObjectRef> for u8 {
-    type Error = ObjectError;
-
-    fn try_from(value: ObjectRef) -> Result<Self, Self::Error> {
+impl FromObject<ObjectRef> for u8 {
+    fn try_from(value: ObjectRef) -> Result<Self, ObjectError> {
         if let Some(val) = value.as_i64() {
             val.try_into().map_err(ObjectError::from)
         } else {
@@ -484,10 +469,8 @@ impl TryFrom<ObjectRef> for u8 {
     }
 }
 
-impl TryFrom<ObjectRef> for f64 {
-    type Error = ObjectError;
-
-    fn try_from(value: ObjectRef) -> Result<Self, Self::Error> {
+impl FromObject<ObjectRef> for f64 {
+    fn try_from(value: ObjectRef) -> Result<Self, ObjectError> {
         if let Some(ret) = value.as_f64() {
             Ok(ret)
         } else {
@@ -501,10 +484,8 @@ impl TryFrom<ObjectRef> for f64 {
     }
 }
 
-impl TryFrom<ObjectRef> for bool {
-    type Error = ObjectError;
-
-    fn try_from(value: ObjectRef) -> Result<Self, Self::Error> {
+impl FromObject<ObjectRef> for bool {
+    fn try_from(value: ObjectRef) -> Result<Self, ObjectError> {
         if let Some(ret) = value.as_bool() {
             Ok(ret)
         } else {
@@ -518,10 +499,8 @@ impl TryFrom<ObjectRef> for bool {
     }
 }
 
-impl TryFrom<ObjectRef> for () {
-    type Error = ObjectError;
-
-    fn try_from(value: ObjectRef) -> Result<Self, Self::Error> {
+impl FromObject<ObjectRef> for () {
+    fn try_from(value: ObjectRef) -> Result<Self, ObjectError> {
         if let Some(ret) = value.as_null() {
             Ok(ret)
         } else {
@@ -535,10 +514,8 @@ impl TryFrom<ObjectRef> for () {
     }
 }
 
-impl TryFrom<ObjectRef> for String {
-    type Error = ObjectError;
-
-    fn try_from(value: ObjectRef) -> Result<Self, Self::Error> {
+impl FromObject<ObjectRef> for String {
+    fn try_from(value: ObjectRef) -> Result<Self, ObjectError> {
         if let Some(ret) = value.as_string() {
             Ok(ret)
         } else {
@@ -552,10 +529,8 @@ impl TryFrom<ObjectRef> for String {
     }
 }
 
-impl TryFrom<ObjectRef> for PathBuf {
-    type Error = ObjectError;
-
-    fn try_from(value: ObjectRef) -> Result<Self, Self::Error> {
+impl FromObject<ObjectRef> for PathBuf {
+    fn try_from(value: ObjectRef) -> Result<Self, ObjectError> {
         if let Some(ret) = value.as_string() {
             Ok(ret.into())
         } else {
@@ -569,10 +544,8 @@ impl TryFrom<ObjectRef> for PathBuf {
     }
 }
 
-impl TryFrom<ObjectRef> for SocketAddr {
-    type Error = ObjectError;
-
-    fn try_from(value: ObjectRef) -> Result<Self, Self::Error> {
+impl FromObject<ObjectRef> for SocketAddr {
+    fn try_from(value: ObjectRef) -> Result<Self, ObjectError> {
         if let Some(ret) = value.as_string() {
             ret.parse().map_err(ObjectError::from)
         } else {
@@ -585,10 +558,8 @@ impl TryFrom<ObjectRef> for SocketAddr {
         }
     }
 }
-impl<T> TryFrom<ObjectRef> for Vec<T> where T: TryFrom<ObjectRef, Error = ObjectError> {
-    type Error = ObjectError;
-
-    fn try_from(value: ObjectRef) -> Result<Self, Self::Error> {
+impl<T> FromObject<ObjectRef> for Vec<T> where T: FromObject<ObjectRef> {
+    fn try_from(value: ObjectRef) -> Result<Self, ObjectError> {
         if ucl_type_t::UCL_ARRAY == value.kind {
             let ret: Vec<Result<T, ObjectError>> = value.iter()
                 .map(T::try_from)
@@ -602,8 +573,14 @@ impl<T> TryFrom<ObjectRef> for Vec<T> where T: TryFrom<ObjectRef, Error = Object
                 Ok(list)
             }
         } else {
-            value.try_into().map(|e| vec![e])
+            FromObject::try_from(value).map(|e| vec![e])
         }
+    }
+}
+
+impl<T> FromObject<ObjectRef> for Option<T> where T: FromObject<ObjectRef> {
+    fn try_from(value: ObjectRef) -> Result<Self, ObjectError> {
+        (T::try_from(value)).map(|e| Some(e))
     }
 }
 
