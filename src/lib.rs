@@ -1,4 +1,5 @@
-//! Uclicious is an wrapper around Universal Configuration Library (UCL) parser with a lot of sugar.
+//! ##### Uclicious is a wrapper around Universal Configuration Library (UCL) parser with a lot of sugar.
+//!
 //! Uclicious is built on top of [libucl](https://github.com/vstakhov/libucl).
 //! It is much more complex than json or TOML, so I recommend reading documentaiton about it before using.
 //! Library provides safe, but raw API to that library:

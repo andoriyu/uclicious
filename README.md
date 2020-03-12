@@ -1,6 +1,7 @@
 ## Uclicious
 
-Uclicious is an wrapper around Universal Configuration Library (UCL) parser with a lot of sugar.
+##### Uclicious is a wrapper around Universal Configuration Library (UCL) parser with a lot of sugar.
+
 Uclicious is built on top of [libucl](https://github.com/vstakhov/libucl).
 It is much more complex than json or TOML, so I recommend reading documentaiton about it before using.
 Library provides safe, but raw API to that library:
@@ -132,3 +133,7 @@ If you choose to derive builder then `::builder()` and `::builder_with_parser(..
 ## Goals and Anti-Goals
  - Provider safe and convient configuration library
  - Providing UCL Object generation tools is not a goal for this project
+ 
+## LICENSE
+
+[BSD-2-Clause](LICENSE).
