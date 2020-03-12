@@ -21,7 +21,6 @@ mod test {
     use crate::raw::parser::Parser;
     use libucl_bind::ucl_type_t;
     use crate::raw::object::Object;
-    use std::convert::TryInto;
 
     #[test]
     fn string_parsing() {
@@ -164,30 +163,5 @@ mod test {
         let obj_str = Object::from("a string without null");
         assert_eq!(ucl_type_t::UCL_STRING, obj_str.kind());
         assert_eq!("a string without null", obj_str.as_string().unwrap());
-    }
-
-    #[test]
-    fn object_into_primitive() {
-        let mut parser = Parser::default();
-        let input = r#"
-            a_bool = true
-            a_string = "what what in the butt"
-            an_integer = 1776
-            a_float = 3.14
-        "#;
-        parser.add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY).unwrap();
-        let result = parser.get_object().unwrap();
-
-        let a_bool: bool = result.lookup("a_bool").unwrap().try_into().unwrap();
-        assert_eq!(true, a_bool);
-
-        let a_string: String = result.lookup("a_string").unwrap().try_into().unwrap();
-        assert_eq!(String::from("what what in the butt"), a_string);
-
-        let an_integer: i64 = result.lookup("an_integer").unwrap().try_into().unwrap();
-        assert_eq!(1776, an_integer);
-
-        let a_float: f64 = result.lookup("a_float").unwrap().try_into().unwrap();
-        assert_eq!(3.14, a_float);
     }
 }
