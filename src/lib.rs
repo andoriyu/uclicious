@@ -1,3 +1,9 @@
+//! Universal configuration library parser with a lot of sugar.
+//! Uclicious is built on top of [libucl](https://github.com/vstakhov/libucl) and exports safe, but raw API to that library:
+//! ```rust
+//!
+//! ```
+
 pub mod raw;
 pub mod error;
 pub mod from_object;
@@ -6,6 +12,15 @@ pub use error::{UclError, UclErrorType};
 pub use raw::{DEFAULT_DUPLICATE_STRATEGY,DEFAULT_PARSER_FLAG,DuplicateStrategy,Priority,ParserFlags,Parser,ObjectError,Object,ObjectRef};
 pub use from_object::FromObject;
 
+
+#[cfg(feature = "uclicious_derive")]
+#[allow(unused_imports)]
+#[macro_use]
+extern crate uclicious_derive;
+
+#[cfg(feature = "uclicious_derive")]
+#[doc(hidden)]
+pub use uclicious_derive::*;
 
 #[cfg(test)]
 mod test {
@@ -113,5 +128,67 @@ mod test {
         expected.insert(String::from("key"), String::from("value"));
         let actual: HashMap<String, String> = FromObject::try_from(root.lookup("dict").unwrap()).unwrap();
         assert_eq!(expected, actual);
+    }
+}
+
+#[cfg(test)]
+mod derive_test {
+    use super::*;
+    use uclicious_derive::Uclicious;
+    use std::path::PathBuf;
+    use std::net::SocketAddr;
+    use std::collections::HashMap;
+
+    #[derive(Debug,Uclicious)]
+    struct Connection {
+        #[ucl(default)]
+        enabled: bool,
+        host: String,
+        #[ucl(default = "420")]
+        port: i64,
+        buffer: u64,
+        #[ucl(path = "type")]
+        kind: String,
+        locations: Vec<PathBuf>,
+        addr: SocketAddr,
+        extra: Extra,
+        #[ucl(path = "subsection.host")]
+        hosts: Vec<String>,
+        #[ucl(default)]
+        option: Option<String>,
+        gates: HashMap<String, bool>,
+    }
+
+    #[derive(Debug, Uclicious)]
+    #[ucl(skip_builder)]
+    struct Extra {
+        enabled: bool
+    }
+    #[test]
+    fn showcase() {
+        let mut builder = Connection::builder();
+
+        let input = r#"
+    enabled = yes
+    host = "some.fake.url"
+    buffer = 1mb
+    type = "working"
+    locations = "/etc/"
+    addr = "127.0.0.1:80"
+    extra = {
+        enabled = on
+    }
+     subsection {
+        host = [host1, host2]
+    }
+    gates {
+        feature_1 = on
+        feature_2 = off
+        feature_3 = on
+    }
+    "#;
+
+        builder.add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY).unwrap();
+        let connection: Connection = builder.build().unwrap();
     }
 }

@@ -1,4 +1,3 @@
-use uclicious_derive::Uclicious;
 use uclicious::*;
 use std::path::PathBuf;
 use std::net::SocketAddr;
@@ -31,7 +30,6 @@ pub struct Extra {
 }
 
 fn main() {
-    println!("Hello, world!");
     let mut builder = Connection::builder();
 
     let input = r#"

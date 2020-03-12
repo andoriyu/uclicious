@@ -7,10 +7,19 @@ edition = "2018"
 [dependencies]
 libucl-bind = { git = "https://github.com/andoriyu/libucl-rs", branch = "master" }
 bitflags = "1.2.1"
+uclicious_derive = { path = "uclicious_derive", optional = true }
+
+[dev-dependencies]
+uclicious_derive = { path = "uclicious_derive"}
+
+[features]
+default = ["derive"]
+derive = ["uclicious_derive"]
 
 [[example]]
 name = "leak-test"
 crate-type = ["bin"]
 
 [workspace]
-members = ["uclicious-derive", "uclicious-example"]
+members = ["uclicious_derive", "uclicious-example"]
+

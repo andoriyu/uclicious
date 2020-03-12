@@ -17,18 +17,6 @@ pub struct Initializer<'a> {
     pub lookup_path: String,
 }
 
-///
-/// Something like:
-/// ```rust,no_run
-///   health: match self.health {
-//                     Some(ref value) => ::std::clone::Clone::clone(value),
-//                     None => {
-//                         return ::std::result::Result::Err(::std::string::String::from(
-//                             "`health` must be initialized",
-//                         ))
-//                     }
-//                 },
-/// ```
 impl<'a> ToTokens for Initializer<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let struct_field = &self.field_ident;
