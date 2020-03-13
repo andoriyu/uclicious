@@ -3,7 +3,7 @@
 ##### Uclicious is a wrapper around Universal Configuration Library (UCL) parser with a lot of sugar.
 
 Uclicious is built on top of [libucl](https://github.com/vstakhov/libucl).
-It is much more complex than json or TOML, so I recommend reading documentaiton about it before using.
+It is much more complex than json or TOML, so I recommend reading documentaiton about it.
 Library provides safe, but raw API to that library:
 ```rust
 use uclicious::*;
@@ -34,7 +34,7 @@ let lookup_result = result.lookup("buffer_size").unwrap().as_i64().unwrap();
 assert_eq!(lookup_result, 1024);
 ```
 
-In order to get around rust rules library implemets it's own trait [FromObject](from_object/trait.FromObject.html) for most of basics types:
+In order to get around rust rules library implemets its own trait FromObject for some basic types:
 ```rust
 use uclicious::*;
 let mut parser = Parser::default();
@@ -127,13 +127,36 @@ If you choose to derive builder then `::builder()` and `::builder_with_parser(..
     - If set that would be used as a key
     - dot notation for key is supported
 
- ### Additional notes
- - If target type is an array, but key is a single value - an implicit list is created.
+### Additional notes
+ - If target type is an array, but key is a single value — an implicit list is created.
  - Automatic derive on enums is not supported, but you can implement it yourself.
-## Goals and Anti-Goals
+ - I have a few more features I want to implement before publishing this crate:
+    - Ability to add variables
+    - Ability to add macross handlers
+    - (maybe) configure parser that us used for derived builder with atrributes.
+    - (maybe) add sources to parser with attributes.
+
+## Contributing
+
+PRs, feature requests, bug reports are welcome. I won't be adding CoC  — be civilized.
+
+## Goals
  - Provider safe and convient configuration library
+ - Automatic derive, so you don't have to think about parser object
+
+### Not Goals
  - Providing UCL Object generation tools is not a goal for this project
- 
+ - 1:1 interface to libUCL
+ - sugar inside `raw` module
+
+## Special thanks
+ - [draft6](https://github.com/draft6) and [hauleth](https://github.com/hauleth)
+    - libucl-rs was a good starting point
+    - Type wrappers pretty much copied from there
+ - [colin-kiegel](https://github.com/colin-kiegel)
+    - Rust-derive-builder was used as a starting point for uclicious-derive
+    - Very well documented proc_macro crate, do recommend.
+
 ## LICENSE
 
 [BSD-2-Clause](LICENSE).
