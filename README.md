@@ -133,8 +133,8 @@ If you choose to derive builder then `::builder()` and `::builder_with_parser(..
  - I have a few more features I want to implement before publishing this crate:
     - Ability to add variables
     - Ability to add macross handlers
-    - (maybe) configure parser that us used for derived builder with atrributes.
-    - (maybe) add sources to parser with attributes.
+    - (maybe) configure parser that us used for derived builder with atrributes
+    - (maybe) add sources to parser with attributes
 
 ## Contributing
 
@@ -155,7 +155,7 @@ PRs, feature requests, bug reports are welcome. I won't be adding CoC  — be ci
     - Type wrappers pretty much copied from there
  - [colin-kiegel](https://github.com/colin-kiegel)
     - Rust-derive-builder was used as a starting point for uclicious-derive
-    - Very well documented proc_macro crate, do recommend.
+    - Very well documented proc_macro crate, do recommend
 
 ## LICENSE
 
