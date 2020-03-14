@@ -15,7 +15,7 @@ use std::num::TryFromIntError;
 use bitflags::_core::convert::Infallible;
 use std::path::PathBuf;
 use std::net::{AddrParseError, SocketAddr};
-use crate::from_object::FromObject;
+use crate::traits::FromObject;
 use std::collections::HashMap;
 
 /// Errors that could be returned by `Object` or `ObjectRef` functions.

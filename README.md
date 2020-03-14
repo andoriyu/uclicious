@@ -1,3 +1,5 @@
+<!-- cargo-sync-readme start -->
+
 ## Uclicious
 
 ##### Uclicious is a wrapper around Universal Configuration Library (UCL) parser with a lot of sugar.
@@ -160,3 +162,5 @@ PRs, feature requests, bug reports are welcome. I won't be adding CoC  — be ci
 ## LICENSE
 
 [BSD-2-Clause](LICENSE).
+
+<!-- cargo-sync-readme end -->
