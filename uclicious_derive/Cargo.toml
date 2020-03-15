@@ -3,6 +3,10 @@ name = "uclicious_derive"
 version = "0.1.0"
 authors = ["Andrey Cherkashin <andoriyu@gmail.com>"]
 edition = "2018"
+license = "BSD-2-Clause"
+categories = ["config"]
+keywords = ["config", "uclicious", "derive"]
+description = "Procedural macro to derive FromObject trait from uclicious crate."
 
 [lib]
 proc-macro = true

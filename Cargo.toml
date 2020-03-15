@@ -3,6 +3,9 @@ name = "uclicious"
 version = "0.1.0"
 authors = ["Andrey Cherkashin <andoriyu@gmail.com>"]
 edition = "2018"
+categories = ["config"]
+keywords = ["config", "uclicious", "ucl", "libuc"]
+description = "Uclicious is a wrapper around Universal Configuration Library (UCL) parser with a lot of sugar."
 
 [dependencies]
 libucl-bind = { package = "uclicious-libucl-sys", version = "0.8.1" }
@@ -10,7 +13,7 @@ bitflags = "1.2.1"
 uclicious_derive = { path = "uclicious_derive", optional = true }
 
 [dev-dependencies]
-uclicious_derive = { path = "uclicious_derive"}
+uclicious_derive = { path = "uclicious_derive", version = "=0.1.0"}
 
 [features]
 default = ["derive"]
