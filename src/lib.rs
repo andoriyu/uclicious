@@ -14,6 +14,7 @@
 //! an_integer = 69420
 //! is_it_good = yes
 //! buffer_size = 1KB
+//! interval = 1s
 //! "#;
 //! parser.add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY).unwrap();
 //! let result = parser.get_object().unwrap();
@@ -32,6 +33,8 @@
 //!
 //! let lookup_result = result.lookup("buffer_size").unwrap().as_i64().unwrap();
 //! assert_eq!(lookup_result, 1024);
+//! let lookup_result = result.lookup("interval").unwrap().as_time().unwrap();
+//! assert_eq!(lookup_result, 1.0f64);
 //! ```
 //!
 //! In order to get around rust rules library implemets its own trait FromObject for some basic types:
@@ -60,6 +63,7 @@
 //! use std::path::PathBuf;
 //! use std::net::SocketAddr;
 //! use std::collections::HashMap;
+//! use std::time::Duration;
 //!
 //! #[derive(Debug,Uclicious)]
 //! #[ucl(var(name = "test", value = "works"))]
@@ -80,6 +84,7 @@
 //!    #[ucl(default)]
 //!    option: Option<String>,
 //!    gates: HashMap<String, bool>,
+//!    interval: Duration,
 //! }
 //!
 //! #[derive(Debug,Uclicious)]
@@ -102,6 +107,7 @@
 //!     subsection {
 //!        host = [host1, host2]
 //!    }
+//!    interval = 10ms
 //!    gates {
 //!         feature_1 = on
 //!         feature_2 = off

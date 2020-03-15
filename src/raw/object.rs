@@ -23,7 +23,8 @@ use std::net::{AddrParseError, SocketAddr};
 use std::num::TryFromIntError;
 use std::ops::{Deref, DerefMut};
 use std::path::PathBuf;
-use bitflags::_core::hash::BuildHasher;
+use std::hash::BuildHasher;
+use std::time::Duration;
 
 /// Errors that could be returned by `Object` or `ObjectRef` functions.
 #[derive(Eq, PartialEq, Debug, Clone)]
@@ -213,6 +214,11 @@ impl ObjectRef {
         self.kind == ucl_type_t::UCL_ARRAY
     }
 
+    /// Returns `true` if this object is a time/duration.
+    pub fn is_time(&self) -> bool {
+        self.kind == ucl_type_t::UCL_TIME
+    }
+
     /// Get priority assigned to the object.
     pub fn priority(&self) -> Priority {
         let out = unsafe { ucl_object_get_priority(self.object) };
@@ -279,9 +285,17 @@ impl ObjectRef {
         }
     }
 
-    /// Return a float value or None.
+    /// Return a float number of seconds. Only works if object is time.
+    pub fn as_time(&self) -> Option<f64> {
+        if !self.is_time() {
+            return None;
+        }
+        self.as_f64()
+    }
+
+    /// Return a float value or None. This function also works on time object.
     pub fn as_f64(&self) -> Option<f64> {
-        if !self.is_float() {
+        if !(self.is_float() || self.is_time()) {
             return None;
         }
         let mut ptr = MaybeUninit::zeroed();
@@ -619,6 +633,20 @@ where
                 .cloned()
                 .map(|(key, result)| (key, result.unwrap()))
                 .collect())
+        }
+    }
+}
+
+impl FromObject<ObjectRef> for Duration {
+    fn try_from(value: ObjectRef) -> Result<Self, ObjectError> {
+        if let Some(seconds) = value.as_time() {
+            Ok(Duration::from_secs_f64(seconds))
+        } else {
+            return Err(ObjectError::WrongType {
+                key: value.key().unwrap_or_default(),
+                actual_type: value.kind,
+                wanted_type: ucl_type_t::UCL_TIME,
+            });
         }
     }
 }
