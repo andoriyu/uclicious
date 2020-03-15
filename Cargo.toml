@@ -7,6 +7,8 @@ categories = ["config"]
 keywords = ["config", "uclicious", "ucl", "libuc"]
 description = "Uclicious is a wrapper around Universal Configuration Library (UCL) parser with a lot of sugar."
 license = "BSD-2-Clause"
+repository = "https://github.com/andoriyu/uclicious"
+homepage = "https://github.com/andoriyu/uclicious"
 
 [dependencies]
 libucl-bind = { package = "uclicious-libucl-sys", version = "0.8.1" }
