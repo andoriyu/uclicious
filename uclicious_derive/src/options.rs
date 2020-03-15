@@ -2,7 +2,7 @@ use crate::block::Block;
 use std::vec::IntoIter;
 use darling::util::{Flag, PathList};
 use darling::{self, ToTokens};
-use syn::{Attribute, Generics, Ident, Visibility, Path, Expr};
+use syn::{Attribute, Generics, Ident, Visibility, Path};
 use crate::builder::{Builder, BuildMethod, IntoBuilder, FromObject};
 use proc_macro2::{Span, TokenStream};
 use crate::initializer::Initializer;

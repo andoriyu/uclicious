@@ -19,7 +19,6 @@ use options::Options;
 mod bindings;
 mod block;
 mod builder;
-mod utils;
 mod parser;
 mod initializer;
 
