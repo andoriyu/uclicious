@@ -23,6 +23,7 @@ use std::net::{AddrParseError, SocketAddr};
 use std::num::TryFromIntError;
 use std::ops::{Deref, DerefMut};
 use std::path::PathBuf;
+use bitflags::_core::hash::BuildHasher;
 
 /// Errors that could be returned by `Object` or `ObjectRef` functions.
 #[derive(Eq, PartialEq, Debug, Clone)]
@@ -502,8 +503,8 @@ impl FromObject<ObjectRef> for bool {
 
 impl FromObject<ObjectRef> for () {
     fn try_from(value: ObjectRef) -> Result<Self, ObjectError> {
-        if let Some(ret) = value.as_null() {
-            Ok(ret)
+        if value.is_null() {
+            Ok(())
         } else {
             let err = ObjectError::WrongType {
                 key: value.key().unwrap_or_default(),
@@ -587,9 +588,10 @@ where
     }
 }
 
-impl<T> FromObject<ObjectRef> for HashMap<String, T>
+impl<T,S> FromObject<ObjectRef> for HashMap<String, T, S>
 where
     T: FromObject<ObjectRef> + Clone,
+    S: BuildHasher + Default
 {
     fn try_from(value: ObjectRef) -> Result<Self, ObjectError> {
         if ucl_type_t::UCL_OBJECT != value.kind {

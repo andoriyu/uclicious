@@ -27,7 +27,6 @@ use std::os::unix::io::AsRawFd;
 use super::{utils, ParserFlags, DEFAULT_PARSER_FLAG};
 use crate::error;
 use crate::raw::object::Object;
-use std::ffi::CStr;
 use std::fmt;
 use std::path::Path;
 
