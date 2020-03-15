@@ -1,6 +1,6 @@
-//! ## Uclicious
+//! # Uclicious [![Build Status](https://dev.azure.com/andoriyu/personal/_apis/build/status/uclicious?branchName=master)](https://dev.azure.com/andoriyu/personal/_build/latest?definitionId=7&branchName=master) [![codecov](https://codecov.io/gh/andoriyu/uclicious/branch/master/graph/badge.svg)](https://codecov.io/gh/andoriyu/uclicious) [![docs.rs](https://docs.rs/uclicious/badge.svg)](https://docs.rs/uclicious) [![Crates.io](https://img.shields.io/crates/v/uclicious.svg)](https://crates.io/crates/uclicious)
 //!
-//! ##### Uclicious is a wrapper around Universal Configuration Library (UCL) parser with a lot of sugar.
+//! #### Uclicious is a wrapper around Universal Configuration Library (UCL) parser with a lot of sugar.
 //!
 //! Uclicious is built on top of [libucl](https://github.com/vstakhov/libucl).
 //! It is much more complex than json or TOML, so I recommend reading documentaiton about it.

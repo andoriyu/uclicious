@@ -9,6 +9,7 @@ description = "Uclicious is a wrapper around Universal Configuration Library (UC
 license = "BSD-2-Clause"
 repository = "https://github.com/andoriyu/uclicious"
 homepage = "https://github.com/andoriyu/uclicious"
+readme = "README.md"
 
 [dependencies]
 libucl-bind = { package = "uclicious-libucl-sys", version = "0.8.1" }

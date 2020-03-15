@@ -21,8 +21,12 @@ jobs:
         echo "##vso[task.setvariable variable=PATH;]$PATH:$HOME/.cargo/bin"
       displayName: Install rust
     - script: |
+        sudo apt-get install -y software-properties-common
+        sudo add-apt-repository ppa:ubuntu-toolchain-r/test
         sudo apt-get update
-        sudo apt-get install -y libblkid-dev libattr1-dev libcurl4-openssl-dev libelf-dev libdw-dev cmake gcc binutils-dev libiberty-dev zlib1g-dev libssl-dev
+        sudo apt-get install -y libblkid-dev libattr1-dev libcurl4-openssl-dev libelf-dev libdw-dev cmake gcc-9 binutils-dev libiberty-dev zlib1g-dev libssl-dev
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 60 \
+                                 --slave /usr/bin/g++ g++ /usr/bin/g++-9
       displayName: Install dependencies
     - script: |
         curl -LSfs https://japaric.github.io/trust/install.sh | sh -s -- --git andoriyu/cargo-suity
