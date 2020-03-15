@@ -4,9 +4,9 @@ use std::net::SocketAddr;
 use std::collections::HashMap;
 
 #[derive(Debug,Uclicious)]
-#[ucl(include(path = "/etc/jails.ucl", optional))]
 #[ucl(var(name = "test", value = "works"))]
-//#[ucl(include(path = "/etc/jails.ucl", strategy = "DuplicateStrategy::UCL_DUPLICATE_MERGE", priority = 10))]
+#[ucl(include(path = "test.ucl"))]
+#[ucl(include(path = "another-test.ucl", strategy = "DuplicateStrategy::UCL_DUPLICATE_MERGE", priority = 10))]
 pub struct Connection {
     #[ucl(default)]
     enabled: bool,

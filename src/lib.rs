@@ -135,6 +135,7 @@
 //!             - Onlt string variables are supported by libUCL.
 //!  - `include(..)`
 //!     - Used to add files into the parser.
+//!     - If file doesn't exist or failed to parse, then error will be returned in a constructor.
 //!     - Has following nested attirbutes:
 //!         - (required) `path(string)`
 //!             - File path. Can be absolute or relative to CWD.
@@ -142,8 +143,6 @@
 //!             - 0-15 priority for the source. Consult the libUCL documentation for more information.
 //!         - (optional) `strategy(uclicious::DuplicateStrategy)`
 //!             - Strategy to use for duplicate keys. Consult the libUCL documentation for more information.
-//!         - (optiona) `optional`
-//!             - If set, then failure to load this file won't stop from builder creation, instead if will be silently ignored.
 //!
 //! #### Field level
 //!

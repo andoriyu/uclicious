@@ -54,8 +54,6 @@ pub struct Include {
     priority: Option<u32>,
     #[darling(default)]
     strategy: Option<Path>,
-    #[darling(default)]
-    optional: Option<bool>,
 }
 
 impl ToTokens for Include {
@@ -67,18 +65,9 @@ impl ToTokens for Include {
             None => bindings::ucl_default_strategy(),
         };
         let into_trait = bindings::into_trait();
-        match self.optional {
-            None => {
-                tokens.append_all(quote!(
-                    parser.add_file_full(#path, #into_trait::into(#priority), #strategy)?;
-                ));
-            }
-            Some(_) => {
-                tokens.append_all(quote!(
-                    let _ = parser.add_file_full(#path, #into_trait::into(#priority), #strategy);
-                ));
-            }
-        }
+        tokens.append_all(quote!(
+            parser.add_file_full(#path, #into_trait::into(#priority), #strategy)?;
+        ));
     }
 }
 
