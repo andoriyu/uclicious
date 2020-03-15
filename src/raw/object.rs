@@ -599,7 +599,7 @@ impl<T> FromObject<ObjectRef> for Vec<T> where T: FromObject<ObjectRef> {
 
 impl<T> FromObject<ObjectRef> for Option<T> where T: FromObject<ObjectRef> {
     fn try_from(value: ObjectRef) -> Result<Self, ObjectError> {
-        (T::try_from(value)).map(|e| Some(e))
+        (T::try_from(value)).map(Some)
     }
 }
 

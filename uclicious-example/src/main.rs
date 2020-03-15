@@ -4,6 +4,9 @@ use std::net::SocketAddr;
 use std::collections::HashMap;
 
 #[derive(Debug,Uclicious)]
+#[ucl(include(path = "/etc/jails.ucl", optional))]
+#[ucl(var(name = "test", value = "works"))]
+//#[ucl(include(path = "/etc/jails.ucl", strategy = "DuplicateStrategy::UCL_DUPLICATE_MERGE", priority = 10))]
 pub struct Connection {
     #[ucl(default)]
     enabled: bool,
@@ -30,13 +33,13 @@ pub struct Extra {
 }
 
 fn main() {
-    let mut builder = Connection::builder();
+    let mut builder = Connection::builder().unwrap();
 
     let input = r#"
     enabled = yes
     host = "some.fake.url"
     buffer = 1mb
-    type = "working"
+    type = $test
     locations = "/etc/"
     addr = "127.0.0.1:80"
     extra = {

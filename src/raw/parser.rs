@@ -14,16 +14,17 @@
 //!
 //! let result = parser.get_object().unwrap();
 //! ```
-use libucl_bind::{ucl_parser, ucl_parser_new, ucl_parser_get_error_code, ucl_parser_get_error, ucl_parser_add_chunk_full, ucl_parse_type, ucl_parser_add_file_full, ucl_parser_free, ucl_parser_get_object, ucl_parser_add_fd_full, ucl_parser_set_filevars};
+use libucl_bind::{ucl_parser, ucl_parser_new, ucl_parser_get_error_code, ucl_parser_get_error, ucl_parser_add_chunk_full, ucl_parse_type, ucl_parser_add_file_full, ucl_parser_free, ucl_parser_get_object, ucl_parser_add_fd_full, ucl_parser_set_filevars, ucl_parser_register_variable};
 use crate::raw::{Priority, DuplicateStrategy};
 
 #[cfg(unix)] use std::os::unix::io::AsRawFd;
 
-use crate::error;
+use crate::{error};
 use std::path::Path;
 use super::{utils,ParserFlags,DEFAULT_PARSER_FLAG};
 use crate::raw::object::{Object};
 use std::fmt;
+use std::ffi::CStr;
 
 /// Raw parser object.
 pub struct Parser {
@@ -131,6 +132,20 @@ impl Parser {
         } else {
             Err(self.get_error())
         }
+    }
+
+    /// Register new variable `$var` that should be replaced by the parser to the `value` string.
+    /// Variables need to be registered _before_ they are referenced.
+    ///
+    /// #### Panics
+    /// This function panics if either `var` or `value` has `\0`.
+    pub fn register_variable<K: AsRef<str>, V:AsRef<str>>(&mut self, var: K, value:V) -> &mut Self {
+        let var = utils::to_c_string(var);
+        let value = utils::to_c_string(value);
+        unsafe {
+            ucl_parser_register_variable(self.parser, var.as_ptr(), value.as_ptr());
+        };
+        self
     }
 }
 

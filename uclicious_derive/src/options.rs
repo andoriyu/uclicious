@@ -1,12 +1,86 @@
 use crate::block::Block;
 use std::vec::IntoIter;
 use darling::util::{Flag, PathList};
-use darling::{self};
-use syn::{Attribute, Generics, Ident, Visibility, Path};
+use darling::{self, ToTokens};
+use syn::{Attribute, Generics, Ident, Visibility, Path, Expr};
 use crate::builder::{Builder, BuildMethod, IntoBuilder, FromObject};
-use proc_macro2::Span;
+use proc_macro2::{Span, TokenStream};
 use crate::initializer::Initializer;
 use crate::parser::ParserMethods;
+use crate::bindings;
+use quote::TokenStreamExt;
+
+#[derive(Debug, Clone, FromMeta)]
+pub struct Variable {
+    name: String,
+    value: String
+}
+impl ToTokens for Variable {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let var = &self.name;
+        let variable = &self.value;
+        tokens.append_all(quote!(
+            parser.register_variable(#var, #variable);
+        ));
+    }
+}
+#[derive(Debug, Clone, FromMeta, Default)]
+pub struct Parser {
+    #[darling(default)]
+    flags: Option<Path>,
+}
+
+impl ToTokens for Parser {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let parser_ty = bindings::ucl_parser();
+        let parser_flags_ty = bindings::ucl_parser_flags_ty();
+        if let Some(ref flags) = self.flags {
+            tokens.append_all(quote!(
+                    let flags: #parser_flags_ty = #flags();
+                    let mut parser = #parser_ty::with_flags(flags);
+                ));
+        } else {
+            let default_trait = bindings::default_trait();
+            tokens.append_all(quote!(
+                    let mut parser: #parser_ty = #default_trait::default();
+                ));
+        }
+    }
+}
+#[derive(Debug, Clone, FromMeta)]
+pub struct Include {
+    path: String,
+    #[darling(default)]
+    priority: Option<u32>,
+    #[darling(default)]
+    strategy: Option<Path>,
+    #[darling(default)]
+    optional: Option<bool>,
+}
+
+impl ToTokens for Include {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let path = &self.path;
+        let priority = self.priority.unwrap_or(0);
+        let strategy = match self.strategy {
+            Some(ref s) => s.clone(),
+            None => bindings::ucl_default_strategy(),
+        };
+        let into_trait = bindings::into_trait();
+        match self.optional {
+            None => {
+                tokens.append_all(quote!(
+                    parser.add_file_full(#path, #into_trait::into(#priority), #strategy)?;
+                ));
+            }
+            Some(_) => {
+                tokens.append_all(quote!(
+                    let _ = parser.add_file_full(#path, #into_trait::into(#priority), #strategy);
+                ));
+            }
+        }
+    }
+}
 
 trait FlagVisibility {
     fn public(&self) -> &Flag;
@@ -85,6 +159,14 @@ pub struct Options {
 
     #[darling(default)]
     field: FieldMeta,
+
+    #[darling(default, multiple)]
+    include: Vec<Include>,
+    #[darling(default)]
+    parser: Parser,
+
+    #[darling(default, multiple, rename = "var")]
+    vars: Vec<Variable>,
 }
 
 /// Data extracted from the fields of the input struct.
@@ -279,6 +361,9 @@ impl Options {
             fields: Vec::with_capacity(self.field_count()),
             functions: Vec::with_capacity(self.field_count()),
             doc_comment: None,
+            includes: self.include.clone(),
+            parser: &self.parser,
+            vars: self.vars.clone(),
         }
     }
     pub fn as_build_method(&self) -> BuildMethod {
@@ -308,6 +393,7 @@ impl Options {
             ident: self.builder_ident(),
             visibility: self.build_method_vis(),
             target_ty: &self.ident,
+            generics: Some(&self.generics),
         }
     }
 }

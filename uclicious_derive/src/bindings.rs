@@ -65,6 +65,11 @@ pub fn borrow_trait() -> Type {
 pub fn ucl_parser() -> Path {
     syn::parse_str("::uclicious::Parser").unwrap()
 }
+
+/// UCL Parser
+pub fn ucl_parser_flags_ty() -> Path {
+    syn::parse_str("::uclicious::ParserFlags").unwrap()
+}
 /// UCL Parser Error
 pub fn ucl_parser_error() -> Path {
     syn::parse_str("::uclicious::UclError").unwrap()
@@ -98,4 +103,9 @@ pub fn ucilicous_duplicate_strategy_type() -> Path {
 
 pub fn path_ty() -> Path {
     syn::parse_str("::std::path::Path").unwrap()
+}
+
+
+pub fn ucl_default_strategy() -> Path {
+    syn::parse_str("::uclicious::DEFAULT_DUPLICATE_STRATEGY").unwrap()
 }

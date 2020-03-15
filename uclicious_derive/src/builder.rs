@@ -7,6 +7,7 @@ use quote::TokenStreamExt;
 use syn::punctuated::Punctuated;
 use syn::{Path};
 use crate::initializer::Initializer;
+use crate::options::{Include, Parser, Variable};
 
 pub struct Builder<'a> {
     /// Name of this builder struct.
@@ -24,6 +25,9 @@ pub struct Builder<'a> {
     pub functions: Vec<TokenStream>,
     /// Doc-comment of the builder struct.
     pub doc_comment: Option<syn::Attribute>,
+    pub includes: Vec<Include>,
+    pub parser: &'a Parser,
+    pub vars: Vec<Variable>,
 }
 
 impl<'a> Builder<'a> {
@@ -100,6 +104,9 @@ pub struct IntoBuilder<'a> {
     ///
     /// The corresonding builder field will be `Option<field_type>`.
     pub target_ty: &'a syn::Ident,
+    /// Type parameters and lifetimes attached to this builder's struct
+    /// definition.
+    pub generics: Option<&'a syn::Generics>,
 }
 
 pub struct FromObject<'a> {
@@ -194,13 +201,15 @@ impl< 'a > ToTokens for Builder < 'a > {
         let builder_fields = &self.fields;
         let functions = &self.functions;
         let derived_traits = {
-            let default_trait: Path = parse_quote!(Default);
-
             let mut traits: Punctuated<&Path, Token![,]> = Default::default();
-            traits.push(&default_trait);
             quote!(#traits)
         };
+        let includes: Vec<TokenStream> = self.includes.iter().map(|e| e.to_token_stream()).collect();
+        let vars: Vec<TokenStream> = self.vars.iter().map(ToTokens::to_token_stream).collect();
         let builder_doc_comment = &self.doc_comment;
+        let result_ty = bindings::result_ty();
+        let ucl_error_ty = bindings::ucl_parser_error();
+        let parser = self.parser;
         tokens.append_all(quote!(
                 #[derive(#derived_traits)]
                 #builder_doc_comment
@@ -211,6 +220,17 @@ impl< 'a > ToTokens for Builder < 'a > {
                 #[allow(dead_code)]
                 impl #impl_generics #builder_ident #ty_generics #where_clause {
                     #(#functions)*
+
+                    #builder_vis fn new() -> #result_ty<Self #ty_generics #where_clause, #ucl_error_ty> {
+                        #parser
+                        #(#vars)*
+                        #(#includes)*
+                        Ok(
+                            Self {
+                                __parser: parser
+                            }
+                        )
+                    }
                 }
             ));
     }
@@ -223,18 +243,19 @@ impl<'a> ToTokens for IntoBuilder<'a> {
         let builder_ident = &self.ident;
         let target = &self.target_ty;
         let parser = bindings::ucl_parser();
+        let result_ty = bindings::result_ty();
+        let ucl_error_ty = bindings::ucl_parser_error();
+        let (struct_generics, ty_generics, where_clause) = self
+            .generics
+            .map(syn::Generics::split_for_impl)
+            .map(|(i, t, w)| (Some(i), Some(t), Some(w)))
+            .unwrap_or((None, None, None));
         tokens.append_all(quote!(
-        impl #target {
-            #builder_vis fn builder() -> #builder_ident {
-                #builder_ident::default()
-            }
-
-            #builder_vis fn builder_with_parser(parser: #parser) -> #builder_ident {
-                #builder_ident {
-                    __parser: parser,
+            impl #target {
+                #builder_vis fn builder() -> #result_ty<#builder_ident #ty_generics #where_clause, #ucl_error_ty> {
+                    #builder_ident::new()
                 }
             }
-        }
         ));
 
     }

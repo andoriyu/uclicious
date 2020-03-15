@@ -111,30 +111,59 @@
 //! let connection: Connection = builder.build().unwrap();
 //! ```
 //!
-//! If you choose to derive builder then `::builder()` and `::builder_with_parser(..)` will be added to target struct.
+//! If you choose to derive builder then `::builder()` method will be added to target struct.
 //!
 //! ### Supported attributes (`#[ucl(..)]`)
 //!
+//! #### Structure level
+//!
 //!  - `skip_builder`
-//!     - if set, then builder and builder methods won't be generated
+//!     - if set, then builder and builder methods won't be generated.
+//!  - `parser(..)`
+//!     - Optional attribute to configure inner parser.
+//!     - Has following nested attributes:
+//!         - `flags`
+//!             - a path to function that returns flags.
+//!  - `var(..)`
+//!     - Optional attribute to register string variables with the parser.
+//!     - Has following nested attributes:
+//!         - `name`
+//!             - A name of the variable without `$` part.
+//!         - `value`
+//!             - A string values for the variable.
+//!             - Onlt string variables are supported by libUCL.
+//!  - `include(..)`
+//!     - Used to add files into the parser.
+//!     - Has following nested attirbutes:
+//!         - (required) `path(string)`
+//!             - File path. Can be absolute or relative to CWD.
+//!         - (optional) `priority(u32)`
+//!             - 0-15 priority for the source. Consult the libUCL documentation for more information.
+//!         - (optional) `strategy(uclicious::DuplicateStrategy)`
+//!             - Strategy to use for duplicate keys. Consult the libUCL documentation for more information.
+//!         - (optiona) `optional`
+//!             - If set, then failure to load this file won't stop from builder creation, instead if will be silently ignored.
+//!
+//! #### Field level
+//!
 //!  - `default`
-//!     - Use Default::default if key not found in object
-//!  - `default(expr)`
-//!     - Use this _expression_ as value if key not found
-//!     - Could be a value or a function call
+//!     - Use Default::default if key not found in object.
+//!  - `default(expression)`
+//!     - Use this _expression_ as value if key not found.
+//!     - Could be a value or a function call.
 //!  - `path(string)`
-//!     - By default field name is used as path
-//!     - If set that would be used as a key
-//!     - dot notation for key is supported
+//!     - By default field name is used as path.
+//!     - If set that would be used as a key.
+//!     - dot notation for key is supported.
 //!
 //! ### Additional notes
 //!  - If target type is an array, but key is a single value — an implicit list is created.
 //!  - Automatic derive on enums is not supported, but you can implement it yourself.
 //!  - I have a few more features I want to implement before publishing this crate:
-//!     - Ability to add variables
-//!     - Ability to add macross handlers
-//!     - (maybe) configure parser that us used for derived builder with atrributes
-//!     - (maybe) add sources to parser with attributes
+//!     - Ability to add variables.
+//!     - Ability to add macross handlers.
+//!     - (maybe) configure parser that us used for derived builder with atrributes.
+//!     - (done) add sources to parser with attributes.
 //!
 //! ## Contributing
 //!
@@ -159,7 +188,7 @@
 //!
 //! ## LICENSE
 //!
-//! [BSD-2-Clause](LICENSE).
+//! [BSD-2-Clause](https://github.com/andoriyu/uclicious/blob/master/LICENSE).
 pub mod raw;
 pub mod error;
 pub mod traits;
@@ -283,6 +312,25 @@ mod test {
         let mut expected = HashMap::new();
         expected.insert(String::from("key"), String::from("value"));
         let actual: HashMap<String, String> = FromObject::try_from(root.lookup("dict").unwrap()).unwrap();
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn register_var() {
+
+        let input = r#"
+            dst = $dst
+        "#;
+
+        let mut parser = Parser::default();
+        parser
+            .register_variable("dst", "/etc/")
+            .register_variable("int", "1");
+        parser.add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY).unwrap();
+        let root = parser.get_object().unwrap();
+
+        let expected = "/etc/".to_string();
+        let actual = root.lookup("dst").unwrap().as_string().unwrap();
         assert_eq!(expected, actual);
     }
 }
