@@ -1,6 +1,5 @@
 use crate::{bindings, DEFAULT_STRUCT_NAME};
 use crate::block::Block;
-use crate::utils::doc_comment_from;
 use darling::ToTokens;
 use proc_macro2::{TokenStream, Span};
 use quote::TokenStreamExt;
@@ -31,12 +30,6 @@ pub struct Builder<'a> {
 }
 
 impl<'a> Builder<'a> {
-    /// Set a doc-comment for this item.
-    pub fn doc_comment(&mut self, s: String) -> &mut Self {
-        self.doc_comment = Some(doc_comment_from(s));
-        self
-    }
-
     /// Add a field to the builder
     pub fn push_field<T: ToTokens>(&mut self, f: &T) -> &mut Self {
         self.fields.push(quote!(#f));
@@ -127,10 +120,6 @@ impl< 'a > ToTokens for FromObject < 'a > {
         let target_ty = &self.target_ty;
         let target_ty_generics = &self.generics;
         let initializers = &self.initializers;
-        let default_struct = self.default_struct.as_ref().map(|default_expr| {
-            let ident = syn::Ident::new(DEFAULT_STRUCT_NAME, Span::call_site());
-            quote!(let #ident: #target_ty #target_ty_generics = #default_expr;)
-        });
 
         let result = bindings::result_ty();
         let error_ty = bindings::ucl_object_error();
@@ -201,7 +190,7 @@ impl< 'a > ToTokens for Builder < 'a > {
         let builder_fields = &self.fields;
         let functions = &self.functions;
         let derived_traits = {
-            let mut traits: Punctuated<&Path, Token![,]> = Default::default();
+            let traits: Punctuated<&Path, Token![,]> = Default::default();
             quote!(#traits)
         };
         let includes: Vec<TokenStream> = self.includes.iter().map(|e| e.to_token_stream()).collect();
@@ -242,10 +231,9 @@ impl<'a> ToTokens for IntoBuilder<'a> {
         let builder_vis = &self.visibility;
         let builder_ident = &self.ident;
         let target = &self.target_ty;
-        let parser = bindings::ucl_parser();
         let result_ty = bindings::result_ty();
         let ucl_error_ty = bindings::ucl_parser_error();
-        let (struct_generics, ty_generics, where_clause) = self
+        let (_struct_generics, ty_generics, where_clause) = self
             .generics
             .map(syn::Generics::split_for_impl)
             .map(|(i, t, w)| (Some(i), Some(t), Some(w)))
