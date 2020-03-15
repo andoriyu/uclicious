@@ -62,6 +62,7 @@
 //! use std::collections::HashMap;
 //!
 //! #[derive(Debug,Uclicious)]
+//! #[ucl(var(name = "test", value = "works"))]
 //! struct Connection {
 //!    #[ucl(default)]
 //!    enabled: bool,
@@ -86,13 +87,13 @@
 //! struct Extra {
 //!    enabled: bool
 //! }
-//! let mut builder = Connection::builder();
+//! let mut builder = Connection::builder().unwrap();
 //!
 //! let input = r#"
 //!     enabled = yes
 //!     host = "some.fake.url"
 //!     buffer = 1mb
-//!     type = "working"
+//!     type = $test
 //!     locations = "/etc/"
 //!     addr = "127.0.0.1:80"
 //!     extra = {
