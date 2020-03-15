@@ -189,14 +189,16 @@
 //! ## LICENSE
 //!
 //! [BSD-2-Clause](https://github.com/andoriyu/uclicious/blob/master/LICENSE).
-pub mod raw;
 pub mod error;
+pub mod raw;
 pub mod traits;
 
 pub use error::{UclError, UclErrorType};
-pub use raw::{DEFAULT_DUPLICATE_STRATEGY,DEFAULT_PARSER_FLAG,DuplicateStrategy,Priority,ParserFlags,Parser,ObjectError,Object,ObjectRef};
+pub use raw::{
+    DuplicateStrategy, Object, ObjectError, ObjectRef, Parser, ParserFlags, Priority,
+    DEFAULT_DUPLICATE_STRATEGY, DEFAULT_PARSER_FLAG,
+};
 pub use traits::FromObject;
-
 
 #[cfg(feature = "uclicious_derive")]
 #[allow(unused_imports)]
@@ -228,7 +230,9 @@ mod test {
         "#;
 
         let mut parser = Parser::default();
-        parser.add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY).unwrap();
+        parser
+            .add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY)
+            .unwrap();
         let root = parser.get_object().unwrap();
 
         let boolean: bool = FromObject::try_from(root.lookup("bool").unwrap()).unwrap();
@@ -269,7 +273,9 @@ mod test {
         "#;
 
         let mut parser = Parser::default();
-        parser.add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY).unwrap();
+        parser
+            .add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY)
+            .unwrap();
         let root = parser.get_object().unwrap();
 
         let expected = String::from("a string");
@@ -285,10 +291,12 @@ mod test {
         "#;
 
         let mut parser = Parser::default();
-        parser.add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY).unwrap();
+        parser
+            .add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY)
+            .unwrap();
         let root = parser.get_object().unwrap();
 
-        let expected = vec![1,2,3,4];
+        let expected = vec![1, 2, 3, 4];
         let actual: Vec<i32> = FromObject::try_from(root.lookup("list").unwrap()).unwrap();
         assert_eq!(expected, actual);
 
@@ -306,18 +314,20 @@ mod test {
         "#;
 
         let mut parser = Parser::default();
-        parser.add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY).unwrap();
+        parser
+            .add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY)
+            .unwrap();
         let root = parser.get_object().unwrap();
 
         let mut expected = HashMap::new();
         expected.insert(String::from("key"), String::from("value"));
-        let actual: HashMap<String, String> = FromObject::try_from(root.lookup("dict").unwrap()).unwrap();
+        let actual: HashMap<String, String> =
+            FromObject::try_from(root.lookup("dict").unwrap()).unwrap();
         assert_eq!(expected, actual);
     }
 
     #[test]
     fn register_var() {
-
         let input = r#"
             dst = $dst
         "#;
@@ -326,7 +336,9 @@ mod test {
         parser
             .register_variable("dst", "/etc/")
             .register_variable("int", "1");
-        parser.add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY).unwrap();
+        parser
+            .add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY)
+            .unwrap();
         let root = parser.get_object().unwrap();
 
         let expected = "/etc/".to_string();

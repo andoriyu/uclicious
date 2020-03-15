@@ -1,39 +1,40 @@
 //! Low level interface to libUCL.
 
-pub mod parser;
-mod utils;
-pub mod priority;
-pub mod object;
 pub mod iterator;
+pub mod object;
+pub mod parser;
+pub mod priority;
+mod utils;
 
-pub use priority::Priority;
+pub use object::{Object, ObjectError, ObjectRef};
 pub use parser::Parser;
-pub use object::{ObjectError,Object,ObjectRef};
+pub use priority::Priority;
 
 /// Strategy to use when sources have duplicate keys.
 pub type DuplicateStrategy = libucl_bind::ucl_duplicate_strategy;
 /// Default strategy is append. Consult libUCL docs for more information.
-pub const DEFAULT_DUPLICATE_STRATEGY:DuplicateStrategy = DuplicateStrategy::UCL_DUPLICATE_APPEND;
+pub const DEFAULT_DUPLICATE_STRATEGY: DuplicateStrategy = DuplicateStrategy::UCL_DUPLICATE_APPEND;
 
 /// Parser flags.
 pub type ParserFlags = libucl_bind::ucl_parser_flags;
 #[doc(hidden)]
 pub const DEFAULT_PARSER_FLAG: ParserFlags = ParserFlags::UCL_PARSER_DEFAULT;
 
-
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::raw::object::Object;
     use crate::raw::parser::Parser;
     use libucl_bind::ucl_type_t;
-    use crate::raw::object::Object;
 
     #[test]
     fn string_parsing() {
         let mut parser = Parser::default();
         let input = r#"test_string = "test_string""#;
 
-        parser.add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY).unwrap();
+        parser
+            .add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY)
+            .unwrap();
 
         let result = parser.get_object().unwrap();
         let lookup_result = result.lookup("test_string").unwrap().as_string().unwrap();
@@ -46,7 +47,9 @@ mod test {
         let mut parser = Parser::default();
         let input = r#"one_kb = 1kb"#;
 
-        parser.add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY).unwrap();
+        parser
+            .add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY)
+            .unwrap();
 
         let result = parser.get_object().unwrap();
         let lookup_result = result.lookup("one_kb").unwrap().as_i64().unwrap();
@@ -59,7 +62,9 @@ mod test {
         let mut parser = Parser::default();
         let input = r#"pi = 3.14"#;
 
-        parser.add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY).unwrap();
+        parser
+            .add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY)
+            .unwrap();
 
         let result = parser.get_object().unwrap();
         let lookup_result = result.lookup("pi").unwrap().as_f64().unwrap();
@@ -72,7 +77,9 @@ mod test {
         let mut parser = Parser::default();
         let input = r#"game = on"#;
 
-        parser.add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY).unwrap();
+        parser
+            .add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY)
+            .unwrap();
 
         let result = parser.get_object().unwrap();
         let lookup_result = result.lookup("game").unwrap().as_bool().unwrap();
@@ -84,24 +91,31 @@ mod test {
     fn into_iter_primitive() {
         let mut parser = Parser::default();
         let input = "features = [1,2,3]";
-        parser.add_chunk_full(input, Priority::default(), DuplicateStrategy::UCL_DUPLICATE_MERGE).unwrap();
+        parser
+            .add_chunk_full(
+                input,
+                Priority::default(),
+                DuplicateStrategy::UCL_DUPLICATE_MERGE,
+            )
+            .unwrap();
         let input = "features = [4,5,6]";
-        parser.add_chunk_full(input, Priority::default(), DuplicateStrategy::UCL_DUPLICATE_MERGE).unwrap();
+        parser
+            .add_chunk_full(
+                input,
+                Priority::default(),
+                DuplicateStrategy::UCL_DUPLICATE_MERGE,
+            )
+            .unwrap();
 
         let result = parser.get_object().unwrap();
         let array = result.lookup("features").unwrap();
 
         assert_eq!(ucl_type_t::UCL_ARRAY, array.kind());
 
+        let actual: Vec<i64> = array.iter().map(|obj| obj.as_i64().unwrap()).collect();
 
-
-        let actual: Vec<i64> = array.iter()
-            .map(|obj| obj.as_i64().unwrap())
-            .collect();
-
-        let expected = vec![1,2,3,4,5,6i64];
+        let expected = vec![1, 2, 3, 4, 5, 6i64];
         assert_eq!(expected, actual);
-
     }
 
     #[test]
@@ -109,7 +123,9 @@ mod test {
         let mut parser = Parser::default();
         let input = r#"game = on"#;
 
-        parser.add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY).unwrap();
+        parser
+            .add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY)
+            .unwrap();
 
         let result = parser.get_object().unwrap();
         let lookup_result = result.lookup("game").unwrap();
@@ -125,7 +141,9 @@ mod test {
         let mut parser = Parser::default();
         let input = r#"game = on"#;
 
-        parser.add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY).unwrap();
+        parser
+            .add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY)
+            .unwrap();
 
         let result = parser.get_object().unwrap();
         let lookup_result = result.lookup("game").unwrap();
@@ -140,7 +158,9 @@ mod test {
     fn iter_object() {
         let mut parser = Parser::default();
         let input = "game = on\nfreedom = yes";
-        parser.add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY).unwrap();
+        parser
+            .add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY)
+            .unwrap();
 
         let result = parser.get_object().unwrap();
         assert_eq!(ucl_type_t::UCL_OBJECT, result.kind());

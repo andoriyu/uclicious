@@ -1,22 +1,28 @@
 //! Output of the parser.
-use libucl_bind::{ucl_object_t, ucl_type_t, ucl_object_type, ucl_object_lookup, ucl_object_unref, ucl_object_get_priority, ucl_object_key, ucl_object_fromint, ucl_object_fromdouble, ucl_object_frombool, ucl_object_lookup_path, ucl_object_tostring_forced, ucl_object_tostring_safe, ucl_object_toint_safe, ucl_object_ref, ucl_object_todouble_safe, ucl_object_toboolean_safe, ucl_object_fromstring};
+use crate::raw::iterator::Iter;
 use crate::raw::{utils, Priority};
-use std::error::Error;
-use std::fmt;
-use std::convert::{TryInto};
-use crate::raw::iterator::{Iter};
-use bitflags::_core::fmt::Formatter;
-use std::ffi::{CStr};
-use std::ops::{Deref, DerefMut};
-use std::mem::MaybeUninit;
-use std::borrow::ToOwned;
-use bitflags::_core::borrow::Borrow;
-use std::num::TryFromIntError;
-use bitflags::_core::convert::Infallible;
-use std::path::PathBuf;
-use std::net::{AddrParseError, SocketAddr};
 use crate::traits::FromObject;
+use bitflags::_core::borrow::Borrow;
+use bitflags::_core::convert::Infallible;
+use bitflags::_core::fmt::Formatter;
+use libucl_bind::{
+    ucl_object_frombool, ucl_object_fromdouble, ucl_object_fromint, ucl_object_fromstring,
+    ucl_object_get_priority, ucl_object_key, ucl_object_lookup, ucl_object_lookup_path,
+    ucl_object_ref, ucl_object_t, ucl_object_toboolean_safe, ucl_object_todouble_safe,
+    ucl_object_toint_safe, ucl_object_tostring_forced, ucl_object_tostring_safe, ucl_object_type,
+    ucl_object_unref, ucl_type_t,
+};
+use std::borrow::ToOwned;
 use std::collections::HashMap;
+use std::convert::TryInto;
+use std::error::Error;
+use std::ffi::CStr;
+use std::fmt;
+use std::mem::MaybeUninit;
+use std::net::{AddrParseError, SocketAddr};
+use std::num::TryFromIntError;
+use std::ops::{Deref, DerefMut};
+use std::path::PathBuf;
 
 /// Errors that could be returned by `Object` or `ObjectRef` functions.
 #[derive(Eq, PartialEq, Debug, Clone)]
@@ -25,7 +31,11 @@ pub enum ObjectError {
     /// Object was found, but value type doesn't match the desired type.
     ///
     /// NOTE: Error only returned when conversion is done by `FromObject` trait. Built-in functions return `None`.
-    WrongType { key: String, actual_type: ucl_type_t, wanted_type: ucl_type_t},
+    WrongType {
+        key: String,
+        actual_type: ucl_type_t,
+        wanted_type: ucl_type_t,
+    },
     /// Wrapper around `TryFromIntError`.
     IntConversionError(TryFromIntError),
     /// Wrapper around `AddrParseError`.
@@ -61,28 +71,27 @@ impl From<TryFromIntError> for ObjectError {
 impl fmt::Display for ObjectError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ObjectError::KeyNotFound(key) => {
-                write!(f, "Key \"{}\" not found in the object", key)
-            },
-            ObjectError::WrongType {key, actual_type,wanted_type} => {
-                write!(f, "Key \"{}\" actual type is {:?} and not {:?}", key, actual_type, wanted_type)
-            },
-            ObjectError::IntConversionError(e) => {
-                e.fmt(f)
-            },
-            ObjectError::AddrParseError(e) => {
-                e.fmt(f)
-            },
-            ObjectError::None => {write!(f, "Impossible error was possible after all.")}
+            ObjectError::KeyNotFound(key) => write!(f, "Key \"{}\" not found in the object", key),
+            ObjectError::WrongType {
+                key,
+                actual_type,
+                wanted_type,
+            } => write!(
+                f,
+                "Key \"{}\" actual type is {:?} and not {:?}",
+                key, actual_type, wanted_type
+            ),
+            ObjectError::IntConversionError(e) => e.fmt(f),
+            ObjectError::AddrParseError(e) => e.fmt(f),
+            ObjectError::None => write!(f, "Impossible error was possible after all."),
         }
     }
 }
 
-
 /// Owned and mutable instance of UCL Object.
 /// All methods that do not require mutability should be implemented on `ObjectRef` instead.
-pub struct  Object {
-    inner: ObjectRef
+pub struct Object {
+    inner: ObjectRef,
 }
 
 impl AsRef<ObjectRef> for Object {
@@ -107,10 +116,8 @@ impl DerefMut for Object {
 
 impl fmt::Debug for Object {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let ptr = unsafe {
-            ucl_object_tostring_forced(self.as_ptr())
-        };
-        let cstr = unsafe {CStr::from_ptr(ptr)};
+        let ptr = unsafe { ucl_object_tostring_forced(self.as_ptr()) };
+        let cstr = unsafe { CStr::from_ptr(ptr) };
         let as_string = cstr.to_string_lossy().to_string();
         f.debug_struct("Object")
             .field("string_value", &as_string)
@@ -120,19 +127,17 @@ impl fmt::Debug for Object {
 
 impl Object {
     pub(crate) fn from_c_ptr(object: *const ucl_object_t) -> Option<Object> {
-        ObjectRef::from_c_ptr(object)
-            .map(|obj_ref| Object {
-                inner: obj_ref
-            })
+        ObjectRef::from_c_ptr(object).map(|obj_ref| Object { inner: obj_ref })
     }
 }
-
 
 /// Objects may not actually dropped, but their reference count is decreased.
 impl Drop for Object {
     fn drop(&mut self) {
         unsafe {
-            if !self.object.is_null() { ucl_object_unref(self.object as *mut ucl_object_t); }
+            if !self.object.is_null() {
+                ucl_object_unref(self.object as *mut ucl_object_t);
+            }
         }
     }
 }
@@ -167,7 +172,7 @@ impl ObjectRef {
         let kind = unsafe { ucl_object_type(object) };
         let result = ObjectRef {
             object: object as *mut ucl_object_t,
-            kind
+            kind,
         };
         Some(result)
     }
@@ -209,9 +214,7 @@ impl ObjectRef {
 
     /// Get priority assigned to the object.
     pub fn priority(&self) -> Priority {
-        let out = unsafe {
-            ucl_object_get_priority(self.object)
-        };
+        let out = unsafe { ucl_object_get_priority(self.object) };
         Priority::from(out)
     }
 
@@ -222,9 +225,7 @@ impl ObjectRef {
 
     /// Get key assigned to the object
     pub fn key(&self) -> Option<String> {
-        let c_str = unsafe {
-            ucl_object_key(self.object)
-        };
+        let c_str = unsafe { ucl_object_key(self.object) };
         utils::to_str(c_str)
     }
 
@@ -234,9 +235,7 @@ impl ObjectRef {
             return None;
         }
         let key = utils::to_c_string(key);
-        let obj = unsafe {
-            ucl_object_lookup(self.object, key.as_ptr())
-        };
+        let obj = unsafe { ucl_object_lookup(self.object, key.as_ptr()) };
         ObjectRef::from_c_ptr(obj as *mut ucl_object_t)
     }
 
@@ -246,19 +245,16 @@ impl ObjectRef {
             return None;
         }
         let key = utils::to_c_string(path);
-        let obj = unsafe {
-            ucl_object_lookup_path(self.object, key.as_ptr())
-        };
+        let obj = unsafe { ucl_object_lookup_path(self.object, key.as_ptr()) };
         ObjectRef::from_c_ptr(obj as *mut ucl_object_t)
     }
     /// Return string value or None.
     pub fn as_string(&self) -> Option<String> {
-
-        if !self.is_string() { return None }
+        if !self.is_string() {
+            return None;
+        }
         let mut ptr = MaybeUninit::zeroed();
-        let result = unsafe {
-            ucl_object_tostring_safe(self.object, ptr.as_mut_ptr())
-        };
+        let result = unsafe { ucl_object_tostring_safe(self.object, ptr.as_mut_ptr()) };
         if result {
             let ptr = unsafe { ptr.assume_init() };
             utils::to_str(ptr)
@@ -270,12 +266,10 @@ impl ObjectRef {
     /// Return an integer value or None.
     pub fn as_i64(&self) -> Option<i64> {
         if !self.is_integer() {
-            return None
+            return None;
         }
         let mut ptr = MaybeUninit::zeroed();
-        let result = unsafe {
-            ucl_object_toint_safe(self.object, ptr.as_mut_ptr())
-        };
+        let result = unsafe { ucl_object_toint_safe(self.object, ptr.as_mut_ptr()) };
         if result {
             let ptr = unsafe { ptr.assume_init() };
             Some(ptr)
@@ -290,9 +284,7 @@ impl ObjectRef {
             return None;
         }
         let mut ptr = MaybeUninit::zeroed();
-        let result = unsafe {
-            ucl_object_todouble_safe(self.object, ptr.as_mut_ptr())
-        };
+        let result = unsafe { ucl_object_todouble_safe(self.object, ptr.as_mut_ptr()) };
         if result {
             let ptr = unsafe { ptr.assume_init() };
             Some(ptr)
@@ -307,9 +299,7 @@ impl ObjectRef {
             return None;
         }
         let mut ptr = MaybeUninit::zeroed();
-        let result = unsafe {
-            ucl_object_toboolean_safe(self.object, ptr.as_mut_ptr())
-        };
+        let result = unsafe { ucl_object_toboolean_safe(self.object, ptr.as_mut_ptr()) };
         if result {
             let ptr = unsafe { ptr.assume_init() };
             Some(ptr)
@@ -334,36 +324,28 @@ impl ObjectRef {
 
 impl From<i64> for Object {
     fn from(source: i64) -> Self {
-        let ptr = unsafe {
-            ucl_object_fromint(source)
-        };
+        let ptr = unsafe { ucl_object_fromint(source) };
         Object::from_c_ptr(ptr).expect("Failed to construct an object.")
     }
 }
 
 impl From<f64> for Object {
     fn from(source: f64) -> Self {
-        let ptr = unsafe {
-            ucl_object_fromdouble(source)
-        };
+        let ptr = unsafe { ucl_object_fromdouble(source) };
         Object::from_c_ptr(ptr).expect("Failed to construct an object.")
     }
 }
 
 impl From<bool> for Object {
     fn from(source: bool) -> Self {
-        let ptr = unsafe {
-            ucl_object_frombool(source)
-        };
+        let ptr = unsafe { ucl_object_frombool(source) };
         Object::from_c_ptr(ptr).expect("Failed to construct an object.")
     }
 }
 impl From<&str> for Object {
     fn from(source: &str) -> Self {
         let cstring = utils::to_c_string(source);
-        let ptr = unsafe {
-            ucl_object_fromstring(cstring.as_ptr())
-        };
+        let ptr = unsafe { ucl_object_fromstring(cstring.as_ptr()) };
         Object::from_c_ptr(ptr).expect("Failed to construct an object.")
     }
 }
@@ -376,7 +358,7 @@ impl FromObject<ObjectRef> for i64 {
             let err = ObjectError::WrongType {
                 key: value.key().unwrap_or_default(),
                 actual_type: value.kind,
-                wanted_type: ucl_type_t::UCL_INT
+                wanted_type: ucl_type_t::UCL_INT,
             };
             Err(err)
         }
@@ -391,7 +373,7 @@ impl FromObject<ObjectRef> for u64 {
             let err = ObjectError::WrongType {
                 key: value.key().unwrap_or_default(),
                 actual_type: value.kind,
-                wanted_type: ucl_type_t::UCL_INT
+                wanted_type: ucl_type_t::UCL_INT,
             };
             Err(err)
         }
@@ -406,7 +388,7 @@ impl FromObject<ObjectRef> for i32 {
             let err = ObjectError::WrongType {
                 key: value.key().unwrap_or_default(),
                 actual_type: value.kind,
-                wanted_type: ucl_type_t::UCL_INT
+                wanted_type: ucl_type_t::UCL_INT,
             };
             Err(err)
         }
@@ -421,7 +403,7 @@ impl FromObject<ObjectRef> for u32 {
             let err = ObjectError::WrongType {
                 key: value.key().unwrap_or_default(),
                 actual_type: value.kind,
-                wanted_type: ucl_type_t::UCL_INT
+                wanted_type: ucl_type_t::UCL_INT,
             };
             Err(err)
         }
@@ -436,7 +418,7 @@ impl FromObject<ObjectRef> for i16 {
             let err = ObjectError::WrongType {
                 key: value.key().unwrap_or_default(),
                 actual_type: value.kind,
-                wanted_type: ucl_type_t::UCL_INT
+                wanted_type: ucl_type_t::UCL_INT,
             };
             Err(err)
         }
@@ -451,7 +433,7 @@ impl FromObject<ObjectRef> for u16 {
             let err = ObjectError::WrongType {
                 key: value.key().unwrap_or_default(),
                 actual_type: value.kind,
-                wanted_type: ucl_type_t::UCL_INT
+                wanted_type: ucl_type_t::UCL_INT,
             };
             Err(err)
         }
@@ -466,7 +448,7 @@ impl FromObject<ObjectRef> for i8 {
             let err = ObjectError::WrongType {
                 key: value.key().unwrap_or_default(),
                 actual_type: value.kind,
-                wanted_type: ucl_type_t::UCL_INT
+                wanted_type: ucl_type_t::UCL_INT,
             };
             Err(err)
         }
@@ -481,7 +463,7 @@ impl FromObject<ObjectRef> for u8 {
             let err = ObjectError::WrongType {
                 key: value.key().unwrap_or_default(),
                 actual_type: value.kind,
-                wanted_type: ucl_type_t::UCL_INT
+                wanted_type: ucl_type_t::UCL_INT,
             };
             Err(err)
         }
@@ -496,7 +478,7 @@ impl FromObject<ObjectRef> for f64 {
             let err = ObjectError::WrongType {
                 key: value.key().unwrap_or_default(),
                 actual_type: value.kind,
-                wanted_type: ucl_type_t::UCL_FLOAT
+                wanted_type: ucl_type_t::UCL_FLOAT,
             };
             Err(err)
         }
@@ -511,7 +493,7 @@ impl FromObject<ObjectRef> for bool {
             let err = ObjectError::WrongType {
                 key: value.key().unwrap_or_default(),
                 actual_type: value.kind,
-                wanted_type: ucl_type_t::UCL_BOOLEAN
+                wanted_type: ucl_type_t::UCL_BOOLEAN,
             };
             Err(err)
         }
@@ -526,7 +508,7 @@ impl FromObject<ObjectRef> for () {
             let err = ObjectError::WrongType {
                 key: value.key().unwrap_or_default(),
                 actual_type: value.kind,
-                wanted_type: ucl_type_t::UCL_NULL
+                wanted_type: ucl_type_t::UCL_NULL,
             };
             Err(err)
         }
@@ -541,7 +523,7 @@ impl FromObject<ObjectRef> for String {
             let err = ObjectError::WrongType {
                 key: value.key().unwrap_or_default(),
                 actual_type: value.kind,
-                wanted_type: ucl_type_t::UCL_STRING
+                wanted_type: ucl_type_t::UCL_STRING,
             };
             Err(err)
         }
@@ -556,7 +538,7 @@ impl FromObject<ObjectRef> for PathBuf {
             let err = ObjectError::WrongType {
                 key: value.key().unwrap_or_default(),
                 actual_type: value.kind,
-                wanted_type: ucl_type_t::UCL_STRING
+                wanted_type: ucl_type_t::UCL_STRING,
             };
             Err(err)
         }
@@ -571,24 +553,23 @@ impl FromObject<ObjectRef> for SocketAddr {
             let err = ObjectError::WrongType {
                 key: value.key().unwrap_or_default(),
                 actual_type: value.kind,
-                wanted_type: ucl_type_t::UCL_STRING
+                wanted_type: ucl_type_t::UCL_STRING,
             };
             Err(err)
         }
     }
 }
-impl<T> FromObject<ObjectRef> for Vec<T> where T: FromObject<ObjectRef> {
+impl<T> FromObject<ObjectRef> for Vec<T>
+where
+    T: FromObject<ObjectRef>,
+{
     fn try_from(value: ObjectRef) -> Result<Self, ObjectError> {
         if ucl_type_t::UCL_ARRAY == value.kind {
-            let ret: Vec<Result<T, ObjectError>> = value.iter()
-                .map(T::try_from)
-                .collect();
+            let ret: Vec<Result<T, ObjectError>> = value.iter().map(T::try_from).collect();
             if let Some(Err(e)) = ret.iter().find(|e| e.is_err()) {
                 Err(e.clone())
             } else {
-                let list: Vec<T> = ret.into_iter()
-                    .map(Result::unwrap)
-                    .collect();
+                let list: Vec<T> = ret.into_iter().map(Result::unwrap).collect();
                 Ok(list)
             }
         } else {
@@ -597,29 +578,42 @@ impl<T> FromObject<ObjectRef> for Vec<T> where T: FromObject<ObjectRef> {
     }
 }
 
-impl<T> FromObject<ObjectRef> for Option<T> where T: FromObject<ObjectRef> {
+impl<T> FromObject<ObjectRef> for Option<T>
+where
+    T: FromObject<ObjectRef>,
+{
     fn try_from(value: ObjectRef) -> Result<Self, ObjectError> {
         (T::try_from(value)).map(Some)
     }
 }
 
-impl<T> FromObject<ObjectRef> for HashMap<String, T> where T: FromObject<ObjectRef> + Clone {
+impl<T> FromObject<ObjectRef> for HashMap<String, T>
+where
+    T: FromObject<ObjectRef> + Clone,
+{
     fn try_from(value: ObjectRef) -> Result<Self, ObjectError> {
         if ucl_type_t::UCL_OBJECT != value.kind {
             return Err(ObjectError::WrongType {
                 key: value.key().unwrap_or_default(),
                 actual_type: value.kind,
-                wanted_type: ucl_type_t::UCL_OBJECT
+                wanted_type: ucl_type_t::UCL_OBJECT,
             });
         }
-        let as_entries: Vec<(String, Result<T, ObjectError>)> = value.iter()
-            .map(|obj| (obj.key().expect("Object without key!"), FromObject::try_from(obj)))
+        let as_entries: Vec<(String, Result<T, ObjectError>)> = value
+            .iter()
+            .map(|obj| {
+                (
+                    obj.key().expect("Object without key!"),
+                    FromObject::try_from(obj),
+                )
+            })
             .collect();
 
         if let Some((_, Err(e))) = as_entries.iter().find(|(_key, result)| result.is_err()) {
             Err(e.clone())
         } else {
-            Ok(as_entries.iter()
+            Ok(as_entries
+                .iter()
                 .cloned()
                 .map(|(key, result)| (key, result.unwrap()))
                 .collect())
@@ -629,10 +623,8 @@ impl<T> FromObject<ObjectRef> for HashMap<String, T> where T: FromObject<ObjectR
 
 impl fmt::Debug for ObjectRef {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let ptr = unsafe {
-            ucl_object_tostring_forced(self.as_ptr())
-        };
-        let cstr = unsafe {CStr::from_ptr(ptr)};
+        let ptr = unsafe { ucl_object_tostring_forced(self.as_ptr()) };
+        let cstr = unsafe { CStr::from_ptr(ptr) };
         let as_string = cstr.to_string_lossy().to_string();
         f.debug_struct("ObjectRef")
             .field("string_value", &as_string)
@@ -644,9 +636,7 @@ impl ToOwned for ObjectRef {
     type Owned = Object;
 
     fn to_owned(&self) -> Self::Owned {
-        let ptr = unsafe {
-            ucl_object_ref(self.as_ptr())
-        };
+        let ptr = unsafe { ucl_object_ref(self.as_ptr()) };
         Object::from_c_ptr(ptr).expect("Got ObjectRef with null ptr")
     }
 }

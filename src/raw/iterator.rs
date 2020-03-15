@@ -1,22 +1,17 @@
 //! Iterators for `ObjectRef`.
 
 use super::object::ObjectRef;
-use libucl_bind::{ucl_object_iterate_new, ucl_object_iterate_safe, ucl_object_iterate_free};
+use libucl_bind::{ucl_object_iterate_free, ucl_object_iterate_new, ucl_object_iterate_safe};
 
 pub struct IterMut<'data> {
     object: &'data mut ObjectRef,
-    inner: libucl_bind::ucl_object_iter_t
+    inner: libucl_bind::ucl_object_iter_t,
 }
 
 impl<'data> IterMut<'data> {
     pub fn new(object: &'data mut ObjectRef) -> Self {
-        let inner = unsafe {
-          ucl_object_iterate_new(object.as_mut_ptr())
-        };
-        IterMut {
-            object,
-            inner
-        }
+        let inner = unsafe { ucl_object_iterate_new(object.as_mut_ptr()) };
+        IterMut { object, inner }
     }
 }
 
@@ -28,9 +23,7 @@ impl<'data> Iterator for IterMut<'data> {
         if !(self.object.is_array() || self.object.is_object()) || self.inner.is_null() {
             return None;
         }
-        let obj_ptr = unsafe {
-            ucl_object_iterate_safe(self.inner, true)
-        };
+        let obj_ptr = unsafe { ucl_object_iterate_safe(self.inner, true) };
 
         ObjectRef::from_c_ptr(obj_ptr)
     }
@@ -38,24 +31,21 @@ impl<'data> Iterator for IterMut<'data> {
 
 impl<'data> Drop for IterMut<'data> {
     fn drop(&mut self) {
-        unsafe { ucl_object_iterate_free(self.inner); }
+        unsafe {
+            ucl_object_iterate_free(self.inner);
+        }
     }
 }
 
 pub struct Iter<'data> {
     object: &'data ObjectRef,
-    inner: libucl_bind::ucl_object_iter_t
+    inner: libucl_bind::ucl_object_iter_t,
 }
 
 impl<'data> Iter<'data> {
     pub fn new(object: &'data ObjectRef) -> Self {
-        let inner = unsafe {
-            ucl_object_iterate_new(object.as_ptr())
-        };
-        Iter {
-            object,
-            inner
-        }
+        let inner = unsafe { ucl_object_iterate_new(object.as_ptr()) };
+        Iter { object, inner }
     }
 }
 
@@ -68,9 +58,7 @@ impl<'data> Iterator for Iter<'data> {
         if !(self.object.is_array() || self.object.is_object()) || self.inner.is_null() {
             return None;
         }
-        let obj_ptr = unsafe {
-            ucl_object_iterate_safe(self.inner, true)
-        };
+        let obj_ptr = unsafe { ucl_object_iterate_safe(self.inner, true) };
 
         ObjectRef::from_c_ptr(obj_ptr)
     }
@@ -78,24 +66,21 @@ impl<'data> Iterator for Iter<'data> {
 
 impl<'data> Drop for Iter<'data> {
     fn drop(&mut self) {
-        unsafe { ucl_object_iterate_free(self.inner); }
+        unsafe {
+            ucl_object_iterate_free(self.inner);
+        }
     }
 }
 
 pub struct IntoIter {
     object: ObjectRef,
-    inner: libucl_bind::ucl_object_iter_t
+    inner: libucl_bind::ucl_object_iter_t,
 }
 
 impl<'data> IntoIter {
     pub fn new(object: ObjectRef) -> Self {
-        let inner = unsafe {
-            ucl_object_iterate_new(object.as_ptr())
-        };
-        IntoIter {
-            object,
-            inner
-        }
+        let inner = unsafe { ucl_object_iterate_new(object.as_ptr()) };
+        IntoIter { object, inner }
     }
 }
 
@@ -107,9 +92,7 @@ impl Iterator for IntoIter {
         if !(self.object.is_array() || self.object.is_object()) || self.inner.is_null() {
             return None;
         }
-        let obj_ptr = unsafe {
-            ucl_object_iterate_safe(self.inner, true)
-        };
+        let obj_ptr = unsafe { ucl_object_iterate_safe(self.inner, true) };
 
         ObjectRef::from_c_ptr(obj_ptr)
     }
@@ -117,7 +100,9 @@ impl Iterator for IntoIter {
 
 impl Drop for IntoIter {
     fn drop(&mut self) {
-        unsafe { ucl_object_iterate_free(self.inner); }
+        unsafe {
+            ucl_object_iterate_free(self.inner);
+        }
     }
 }
 
