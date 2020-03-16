@@ -156,7 +156,6 @@ impl< 'a > ToTokens for BuildMethod < 'a > {
         let vis = &self.visibility;
         let target_ty = &self.target_ty;
         let target_ty_generics = &self.target_ty_generics;
-        let doc_comment = &self.doc_comment;
         let default_struct = self.default_struct.as_ref().map(|default_expr| {
             let ident = syn::Ident::new(DEFAULT_STRUCT_NAME, Span::call_site());
             quote!(let #ident: #target_ty #target_ty_generics = #default_expr;)
@@ -167,7 +166,7 @@ impl< 'a > ToTokens for BuildMethod < 'a > {
         let ucl_obj_error_ty = bindings::ucl_object_error();
         let from_obj = bindings::from_object_trait();
         tokens.append_all(quote!(
-            #doc_comment
+            #[doc = "Build target struct or return first encountered error."]
             #vis fn #ident(mut self) -> #result<#target_ty #target_ty_generics, #boxed_error> {
                 #default_struct
                 let root = self.__parser.get_object().map_err(|e: #ucl_error_ty| e.boxed() as #boxed_error)?;
@@ -209,7 +208,7 @@ impl< 'a > ToTokens for Builder < 'a > {
                 #[allow(dead_code)]
                 impl #impl_generics #builder_ident #ty_generics #where_clause {
                     #(#functions)*
-
+                    /// Create a new builder.
                     #builder_vis fn new() -> #result_ty<Self #ty_generics #where_clause, #ucl_error_ty> {
                         #parser
                         #(#vars)*
@@ -240,6 +239,7 @@ impl<'a> ToTokens for IntoBuilder<'a> {
             .unwrap_or((None, None, None));
         tokens.append_all(quote!(
             impl #target {
+                /// Creates a builder struct that can be used to create this struct.
                 #builder_vis fn builder() -> #result_ty<#builder_ident #ty_generics #where_clause, #ucl_error_ty> {
                     #builder_ident::new()
                 }
