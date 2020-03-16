@@ -16,6 +16,7 @@ a_float = 3.14
 an_integer = 69420
 is_it_good = yes
 buffer_size = 1KB
+interval = 1s
 "#;
 parser.add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY).unwrap();
 let result = parser.get_object().unwrap();
@@ -34,6 +35,8 @@ assert_eq!(lookup_result, true);
 
 let lookup_result = result.lookup("buffer_size").unwrap().as_i64().unwrap();
 assert_eq!(lookup_result, 1024);
+let lookup_result = result.lookup("interval").unwrap().as_time().unwrap();
+assert_eq!(lookup_result, 1.0f64);
 ```
 
 In order to get around rust rules library implemets its own trait FromObject for some basic types:
@@ -62,6 +65,7 @@ use uclicious::*;
 use std::path::PathBuf;
 use std::net::SocketAddr;
 use std::collections::HashMap;
+use std::time::Duration;
 
 #[derive(Debug,Uclicious)]
 #[ucl(var(name = "test", value = "works"))]
@@ -82,6 +86,7 @@ struct Connection {
    #[ucl(default)]
    option: Option<String>,
    gates: HashMap<String, bool>,
+   interval: Duration,
 }
 
 #[derive(Debug,Uclicious)]
@@ -104,6 +109,7 @@ let input = r#"
     subsection {
        host = [host1, host2]
    }
+   interval = 10ms
    gates {
         feature_1 = on
         feature_2 = off
@@ -127,6 +133,13 @@ If you choose to derive builder then `::builder()` method will be added to targe
     - Has following nested attributes:
         - `flags`
             - a path to function that returns flags.
+        - `filevars(..)`
+            - call `set_filevars` on a parser.
+            - Has following nested attributes:
+                - `path`
+                    - a string representation of filepath.
+                - `expand`
+                    - (optional) if set, then variables would be expanded to absolute.
  - `var(..)`
     - Optional attribute to register string variables with the parser.
     - Has following nested attributes:
