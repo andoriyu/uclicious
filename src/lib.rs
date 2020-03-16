@@ -131,6 +131,13 @@
 //!     - Has following nested attributes:
 //!         - `flags`
 //!             - a path to function that returns flags.
+//!         - `filevars(..)`
+//!             - call `set_filevars` on a parser.
+//!             - Has following nested attributes:
+//!                 - `path`
+//!                     - a string representation of filepath.
+//!                 - `expand`
+//!                     - (optional) if set, then variables would be expanded to absolute.
 //!  - `var(..)`
 //!     - Optional attribute to register string variables with the parser.
 //!     - Has following nested attributes:

@@ -61,6 +61,27 @@ impl ToTokens for ParserMethods {
             self.__parser.register_variable(var, value);
             self
         }
+        /// Add the standard file variables to the `parser` based on the `filename` specified:
+        ///
+        /// - `$FILENAME`- a filename of ucl input
+        /// - `$CURDIR` - a current directory of the input
+        ///
+        /// For example, if a filename param is `../something.conf` then the variables will have the following values:
+        ///
+        /// - `$FILENAME` - `../something.conf`
+        /// - `$CURDIR` - `..`
+        ///
+        /// if need_expand parameter is true then all relative paths are expanded using realpath call. In this example if .. is /etc/dir then variables will have these values:
+        ///
+        /// - `$FILENAME` - `/etc/something.conf`
+        /// - `$CURDIR` - `/etc`
+        #vis fn set_filevars<F: #as_ref<#path>>(
+            &mut self,
+            filename: F,
+            need_expand: bool,
+        ) -> #result<(), #err> {
+            self.__parser.set_filevars(filename, need_expand)
+        }
         ))
     }
 }

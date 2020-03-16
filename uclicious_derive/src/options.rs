@@ -24,10 +24,18 @@ impl ToTokens for Variable {
         ));
     }
 }
+
+#[derive(Debug, Clone, FromMeta, Default)]
+pub struct FileVars {
+    path: String,
+    expand: Option<bool>,
+}
+
 #[derive(Debug, Clone, FromMeta, Default)]
 pub struct Parser {
     #[darling(default)]
     flags: Option<Path>,
+    filevars: Option<FileVars>,
 }
 
 impl ToTokens for Parser {
@@ -44,6 +52,13 @@ impl ToTokens for Parser {
             tokens.append_all(quote!(
                     let mut parser: #parser_ty = #default_trait::default();
                 ));
+        }
+        if let Some(ref filevars) = self.filevars {
+            let expand = filevars.expand.unwrap_or_default();
+            let path = filevars.path.as_str();
+            tokens.append_all(quote!(
+                let _ = parser.set_filevars(#path, #expand)?;
+            ));
         }
     }
 }
