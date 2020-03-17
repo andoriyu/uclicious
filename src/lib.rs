@@ -182,6 +182,15 @@
 //!
 //! PRs, feature requests, bug reports are welcome. I won't be adding CoC  — be civilized.
 //!
+//! #### Particular Contributions of Interest
+//! 
+//!  - Optimize derive code.
+//!  - Improve documentation — I often write late and night and some it might look like a word soup.
+//!  - Better tests
+//!  - `from` and `try_from` like in serder [#3]
+//!  - Glob support in derive parser section
+//!  
+//!
 //! ## Goals
 //!  - Provider safe and convient configuration library
 //!  - Automatic derive, so you don't have to think about parser object
