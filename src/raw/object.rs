@@ -4,7 +4,7 @@ use crate::raw::{utils, Priority};
 use crate::traits::FromObject;
 use bitflags::_core::borrow::Borrow;
 use bitflags::_core::convert::Infallible;
-use bitflags::_core::fmt::Formatter;
+use bitflags::_core::fmt::{Formatter, Display};
 use libucl_bind::{
     ucl_object_frombool, ucl_object_fromdouble, ucl_object_fromint, ucl_object_fromstring,
     ucl_object_get_priority, ucl_object_key, ucl_object_lookup, ucl_object_lookup_path,
@@ -42,6 +42,8 @@ pub enum ObjectError {
     IntConversionError(TryFromIntError),
     /// Wrapper around `AddrParseError`.
     AddrParseError(AddrParseError),
+    /// An error that we couldn't match to internal type.
+    Other(String),
     /// Not an error, but required for some conversions.
     None,
 }
@@ -49,8 +51,19 @@ pub enum ObjectError {
 impl Error for ObjectError {}
 
 impl ObjectError {
+    /// Wrap error in Box<>.
     pub fn boxed(self) -> Box<ObjectError> {
         Box::new(self)
+    }
+
+    /// Wrap error in Box<> and erase its type.
+    pub fn boxed_dyn(self) -> Box<dyn Error> {
+        Box::new(self)
+    }
+
+    /// Create a new error `Other` by extracting the error description.
+    pub fn other<E: Error + Display>(err: E) -> ObjectError {
+        ObjectError::Other(err.to_string())
     }
 }
 impl From<Infallible> for ObjectError {
@@ -85,6 +98,7 @@ impl fmt::Display for ObjectError {
             ),
             ObjectError::IntConversionError(e) => e.fmt(f),
             ObjectError::AddrParseError(e) => e.fmt(f),
+            ObjectError::Other(e) => e.fmt(f),
             ObjectError::None => write!(f, "Impossible error was possible after all."),
         }
     }

@@ -26,6 +26,8 @@ mod test {
     use crate::raw::object::Object;
     use crate::raw::parser::Parser;
     use libucl_bind::ucl_type_t;
+    use std::error::Error;
+    use std::path::Display;
 
     #[test]
     fn string_parsing() {
@@ -189,5 +191,13 @@ mod test {
         let obj_str = Object::from("a string without null");
         assert_eq!(ucl_type_t::UCL_STRING, obj_str.kind());
         assert_eq!("a string without null", obj_str.as_string().unwrap());
+    }
+
+    #[test]
+    fn dyn_error() {
+        let err = std::io::Error::from_raw_os_error(42);
+        let err = ObjectError::other(err);
+
+        assert!(err.to_string().contains("os error 42"));
     }
 }
