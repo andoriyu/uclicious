@@ -198,6 +198,6 @@ mod test {
         let err = std::io::Error::from_raw_os_error(42);
         let err = ObjectError::other(err);
 
-        assert_eq!("Protocol not available (os error 42)", err.to_string());
+        assert!(err.to_string().contains("os error 42"));
     }
 }
