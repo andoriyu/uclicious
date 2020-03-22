@@ -7,7 +7,7 @@ pub trait FromObject<T>: Sized {
     fn try_from(value: T) -> Result<Self, ObjectError>;
 }
 
-pub trait TryInto<T> :Size {
+pub trait TryInto<T> :Sized {
     fn try_into(self) -> Result<Self, ObjectError>;
 }
 
