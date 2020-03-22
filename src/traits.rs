@@ -8,12 +8,14 @@ pub trait FromObject<T>: Sized {
 }
 
 pub trait TryInto<T> :Sized {
-    fn try_into(self) -> Result<Self, ObjectError>;
+    fn try_into(self) -> Result<T, ObjectError>;
 }
 
-/// A clone of TryInto trait from std.
-impl<T,U> TryInto<U> for T where U: FromObject<T> {
-    fn try_into(self) -> Result<Self, ObjectError> {
-        FromObject::try_from(self)
+impl<T, U> TryInto<U> for T
+    where
+        U: FromObject<T>,
+{
+    fn try_into(self) -> Result<U, ObjectError> {
+        U::try_from(self)
     }
 }
