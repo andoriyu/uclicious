@@ -1,7 +1,7 @@
 #![allow(unused)]
 
-use syn::{Path, Type};
 use proc_macro2::Ident;
+use syn::{Path, Type};
 
 pub fn string_ty() -> Path {
     syn::parse_str("::std::string::String").unwrap()
@@ -104,7 +104,6 @@ pub fn ucilicous_duplicate_strategy_type() -> Path {
 pub fn path_ty() -> Path {
     syn::parse_str("::std::path::Path").unwrap()
 }
-
 
 pub fn ucl_default_strategy() -> Path {
     syn::parse_str("::uclicious::DEFAULT_DUPLICATE_STRATEGY").unwrap()

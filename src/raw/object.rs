@@ -4,7 +4,7 @@ use crate::raw::{utils, Priority};
 use crate::traits::FromObject;
 use bitflags::_core::borrow::Borrow;
 use bitflags::_core::convert::Infallible;
-use bitflags::_core::fmt::{Formatter, Display};
+use bitflags::_core::fmt::{Display, Formatter};
 use libucl_bind::{
     ucl_object_frombool, ucl_object_fromdouble, ucl_object_fromint, ucl_object_fromstring,
     ucl_object_get_priority, ucl_object_key, ucl_object_lookup, ucl_object_lookup_path,
@@ -18,12 +18,12 @@ use std::convert::TryInto;
 use std::error::Error;
 use std::ffi::CStr;
 use std::fmt;
+use std::hash::BuildHasher;
 use std::mem::MaybeUninit;
 use std::net::{AddrParseError, SocketAddr};
 use std::num::TryFromIntError;
 use std::ops::{Deref, DerefMut};
 use std::path::PathBuf;
-use std::hash::BuildHasher;
 use std::time::Duration;
 
 /// Errors that could be returned by `Object` or `ObjectRef` functions.
@@ -62,7 +62,7 @@ impl ObjectError {
     }
 
     /// Create a new error `Other` by extracting the error description.
-    pub fn other<E: Error + Display>(err: E) -> ObjectError {
+    pub fn other<E: Display>(err: E) -> ObjectError {
         ObjectError::Other(err.to_string())
     }
 }
@@ -616,10 +616,10 @@ where
     }
 }
 
-impl<T,S> FromObject<ObjectRef> for HashMap<String, T, S>
+impl<T, S> FromObject<ObjectRef> for HashMap<String, T, S>
 where
     T: FromObject<ObjectRef> + Clone,
-    S: BuildHasher + Default
+    S: BuildHasher + Default,
 {
     fn try_from(value: ObjectRef) -> Result<Self, ObjectError> {
         if ucl_type_t::UCL_OBJECT != value.kind {

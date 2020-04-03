@@ -26,8 +26,6 @@ mod test {
     use crate::raw::object::Object;
     use crate::raw::parser::Parser;
     use libucl_bind::ucl_type_t;
-    use std::error::Error;
-    use std::path::Display;
 
     #[test]
     fn string_parsing() {
