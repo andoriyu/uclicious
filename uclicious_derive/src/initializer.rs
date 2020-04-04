@@ -19,6 +19,7 @@ pub struct Initializer<'a> {
     pub validation: Option<Path>,
     pub from: Option<Path>,
     pub try_from: Option<Path>,
+    pub map: Option<Path>,
 }
 
 impl<'a> ToTokens for Initializer<'a> {
@@ -54,15 +55,17 @@ impl<'a> Initializer<'a> {
         }
     }
     fn match_some(&'a self) -> MatchSome {
-        match (&self.validation, &self.from, &self.try_from) {
-            (None, None, None) => MatchSome::Simple,
-            (Some(validation), None, None) => MatchSome::Validation(validation),
-            (None, Some(src_type), None) => MatchSome::From(src_type),
-            (None, None, Some(src_type)) => MatchSome::TryFrom(src_type),
-            (Some(validation), Some(from), None) => MatchSome::FromValidation(from, validation),
-            (Some(validation), None, Some(from)) => MatchSome::TryFromValidation(from, validation),
+        match (&self.validation, &self.from, &self.try_from, &self.map) {
+            (None, None, None, None) => MatchSome::Simple,
+            (Some(validation), None, None, None) => MatchSome::Validation(validation),
+            (None, Some(src_type), None, None) => MatchSome::From(src_type),
+            (None, None, Some(src_type), None) => MatchSome::TryFrom(src_type),
+            (Some(validation), Some(from), None, None) => MatchSome::FromValidation(from, validation),
+            (Some(validation), None, Some(from), None) => MatchSome::TryFromValidation(from, validation),
+            (None, None, None, Some(map_func)) => MatchSome::Map(map_func),
+            (Some(validation), None, None, Some(map_func)) => MatchSome::MapValidation(map_func, validation),
             _ => panic!(
-                "field {}: Can't have both from and try_from",
+                "field {}: map, from and try_from are mutually exclusive",
                 self.field_ident
             ),
         }
@@ -88,6 +91,8 @@ enum MatchSome<'a> {
     FromValidation(&'a Path, &'a Path),
     TryFrom(&'a Path),
     TryFromValidation(&'a Path, &'a Path),
+    Map(&'a Path),
+    MapValidation(&'a Path, &'a Path),
 }
 
 impl<'a> ToTokens for MatchNone<'a> {
@@ -139,6 +144,13 @@ impl<'a> ToTokens for MatchSome<'a> {
                 let v = #try_into_trait::try_into(v)?;
                 #validation(&lookup_path, &v).map(|_| v)?
             ),
+            MatchSome::Map(map_func) => quote!(
+                #map_func(obj)?
+            ),
+            MatchSome::MapValidation(map_func, validation) => quote!(
+                let v = #map_func(obj)?;
+                #validation(&lookup_path, &v).map(|_| v)?
+            )
         };
         tokens.append_all(quote);
     }
