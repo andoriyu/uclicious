@@ -14,10 +14,10 @@ readme = "README.md"
 [dependencies]
 libucl-bind = { package = "uclicious-libucl-sys", version = "0.8.1" }
 bitflags = "1.2.1"
-uclicious_derive = { path = "uclicious_derive", optional = true, version = "=0.1.1" }
+uclicious_derive = { path = "uclicious_derive", optional = true, version = "=0.1.3" }
 
 [dev-dependencies]
-uclicious_derive = { path = "uclicious_derive", version = "=0.1.1"}
+uclicious_derive = { path = "uclicious_derive", version = "=0.1.3"}
 
 [features]
 default = ["derive"]
