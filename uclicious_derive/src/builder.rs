@@ -1,12 +1,12 @@
-use crate::{bindings, DEFAULT_STRUCT_NAME};
 use crate::block::Block;
-use darling::ToTokens;
-use proc_macro2::{TokenStream, Span};
-use quote::TokenStreamExt;
-use syn::punctuated::Punctuated;
-use syn::{Path};
 use crate::initializer::Initializer;
 use crate::options::{Include, Parser, Variable};
+use crate::{bindings, DEFAULT_STRUCT_NAME};
+use darling::ToTokens;
+use proc_macro2::{Span, TokenStream};
+use quote::TokenStreamExt;
+use syn::punctuated::Punctuated;
+use syn::Path;
 
 pub struct Builder<'a> {
     /// Name of this builder struct.
@@ -115,8 +115,8 @@ pub struct FromObject<'a> {
     pub default_struct: Option<Block>,
 }
 
-impl< 'a > ToTokens for FromObject < 'a > {
-    fn to_tokens( & self, tokens: & mut TokenStream) {
+impl<'a> ToTokens for FromObject<'a> {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
         let target_ty = &self.target_ty;
         let target_ty_generics = &self.generics;
         let initializers = &self.initializers;
@@ -150,8 +150,8 @@ impl< 'a > ToTokens for FromObject < 'a > {
         ))
     }
 }
-impl< 'a > ToTokens for BuildMethod < 'a > {
-    fn to_tokens( & self, tokens: & mut TokenStream) {
+impl<'a> ToTokens for BuildMethod<'a> {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
         let ident = self.ident;
         let vis = &self.visibility;
         let target_ty = &self.target_ty;
@@ -175,7 +175,7 @@ impl< 'a > ToTokens for BuildMethod < 'a > {
         ))
     }
 }
-impl< 'a > ToTokens for Builder < 'a > {
+impl<'a> ToTokens for Builder<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let builder_vis = &self.visibility;
         let builder_ident = &self.ident;
@@ -192,7 +192,8 @@ impl< 'a > ToTokens for Builder < 'a > {
             let traits: Punctuated<&Path, Token![,]> = Default::default();
             quote!(#traits)
         };
-        let includes: Vec<TokenStream> = self.includes.iter().map(|e| e.to_token_stream()).collect();
+        let includes: Vec<TokenStream> =
+            self.includes.iter().map(|e| e.to_token_stream()).collect();
         let vars: Vec<TokenStream> = self.vars.iter().map(ToTokens::to_token_stream).collect();
         let builder_doc_comment = &self.doc_comment;
         let result_ty = bindings::result_ty();
@@ -224,7 +225,6 @@ impl< 'a > ToTokens for Builder < 'a > {
     }
 }
 
-
 impl<'a> ToTokens for IntoBuilder<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let builder_vis = &self.visibility;
@@ -245,6 +245,5 @@ impl<'a> ToTokens for IntoBuilder<'a> {
                 }
             }
         ));
-
     }
 }

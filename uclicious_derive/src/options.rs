@@ -1,19 +1,19 @@
+use crate::bindings;
 use crate::block::Block;
-use std::vec::IntoIter;
-use darling::util::{Flag, PathList};
-use darling::{self, ToTokens};
-use syn::{Attribute, Generics, Ident, Visibility, Path};
-use crate::builder::{Builder, BuildMethod, IntoBuilder, FromObject};
-use proc_macro2::{Span, TokenStream};
+use crate::builder::{BuildMethod, Builder, FromObject, IntoBuilder};
 use crate::initializer::Initializer;
 use crate::parser::ParserMethods;
-use crate::bindings;
+use darling::util::{Flag, PathList};
+use darling::{self, ToTokens};
+use proc_macro2::{Span, TokenStream};
 use quote::TokenStreamExt;
+use std::vec::IntoIter;
+use syn::{Attribute, Generics, Ident, Path, Visibility};
 
 #[derive(Debug, Clone, FromMeta)]
 pub struct Variable {
     name: String,
-    value: String
+    value: String,
 }
 impl ToTokens for Variable {
     fn to_tokens(&self, tokens: &mut TokenStream) {
@@ -44,14 +44,14 @@ impl ToTokens for Parser {
         let parser_flags_ty = bindings::ucl_parser_flags_ty();
         if let Some(ref flags) = self.flags {
             tokens.append_all(quote!(
-                    let flags: #parser_flags_ty = #flags();
-                    let mut parser = #parser_ty::with_flags(flags);
-                ));
+                let flags: #parser_flags_ty = #flags();
+                let mut parser = #parser_ty::with_flags(flags);
+            ));
         } else {
             let default_trait = bindings::default_trait();
             tokens.append_all(quote!(
-                    let mut parser: #parser_ty = #default_trait::default();
-                ));
+                let mut parser: #parser_ty = #default_trait::default();
+            ));
         }
         if let Some(ref filevars) = self.filevars {
             let expand = filevars.expand.unwrap_or_default();
@@ -189,6 +189,12 @@ pub struct Field {
     default: Option<DefaultExpression>,
     #[darling(default)]
     path: Option<String>,
+    #[darling(default)]
+    validate: Option<Path>,
+    #[darling(default)]
+    from: Option<Path>,
+    #[darling(default)]
+    try_from: Option<Path>,
 }
 impl FlagVisibility for Field {
     fn public(&self) -> &Flag {
@@ -205,7 +211,7 @@ impl Field {
         match (&self.ident, &self.path) {
             (_, Some(path)) => path.clone(),
             (Some(ident), None) => ident.clone().to_string(),
-            (_,_) => panic!("Can't figure out key path")
+            (_, _) => panic!("Can't figure out key path"),
         }
     }
 }
@@ -301,7 +307,6 @@ impl FlagVisibility for BuildFn {
     }
 }
 
-
 impl Options {
     pub fn skip_builder(&self) -> bool {
         self.skip_builder
@@ -341,7 +346,7 @@ impl Options {
         self.raw_fields().len()
     }
     /// Get an iterator over the input struct's fields which pulls fallback
-/// values from struct-level settings.
+    /// values from struct-level settings.
     pub fn fields(&self) -> FieldIter {
         FieldIter(self, self.raw_fields().into_iter())
     }
@@ -351,10 +356,7 @@ impl Options {
             target_ty: self.ident.clone(),
             generics: Some(&self.generics),
             initializers: Vec::with_capacity(self.field_count()),
-            default_struct: self
-                .default
-                .as_ref()
-                .map(|x| x.parse_block(false)),
+            default_struct: self.default.as_ref().map(|x| x.parse_block(false)),
         }
     }
     pub fn as_builder(&self) -> Builder {
@@ -379,16 +381,13 @@ impl Options {
             target_ty_generics: Some(ty_generics),
             initializers: Vec::with_capacity(self.field_count()),
             doc_comment: None,
-            default_struct: self
-                .default
-                .as_ref()
-                .map(|x| x.parse_block(false)),
+            default_struct: self.default.as_ref().map(|x| x.parse_block(false)),
             validate_fn: self.build_fn.validate.as_ref(),
         }
     }
     pub fn as_parser_methods(&self) -> ParserMethods {
         ParserMethods {
-            visibility: self.build_method_vis()
+            visibility: self.build_method_vis(),
         }
     }
 
@@ -414,7 +413,6 @@ impl<'a> Iterator for FieldIter<'a> {
         })
     }
 }
-
 
 /// Accessor for field data which can pull through options from the parent
 /// struct.
@@ -442,21 +440,20 @@ impl<'a> FieldWithDefaults<'a> {
     pub fn use_parent_default(&self) -> bool {
         self.field.default.is_none() && self.parent.default.is_some()
     }
-   /// Returns an `Initializer` according to the options.
-   ///
-   /// # Panics
-   ///
-   /// if `default_expression` can not be parsed as `Block`.
+    /// Returns an `Initializer` according to the options.
+    ///
+    /// # Panics
+    ///
+    /// if `default_expression` can not be parsed as `Block`.
     pub fn as_initializer(&'a self) -> Initializer<'a> {
         Initializer {
             field_ident: self.field_ident(),
-            default_value: self
-                .field
-                .default
-                .as_ref()
-                .map(|x| x.parse_block(false)),
+            default_value: self.field.default.as_ref().map(|x| x.parse_block(false)),
             use_default_struct: self.use_parent_default(),
             lookup_path: self.field.get_lookup_key(),
+            validation: self.field.validate.clone(),
+            from: self.field.from.clone(),
+            try_from: self.field.try_from.clone(),
         }
     }
 }

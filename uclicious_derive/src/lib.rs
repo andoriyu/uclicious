@@ -19,8 +19,8 @@ use options::Options;
 mod bindings;
 mod block;
 mod builder;
-mod parser;
 mod initializer;
+mod parser;
 
 const DEFAULT_STRUCT_NAME: &str = "__default";
 
@@ -50,7 +50,6 @@ fn derive_for_struct(ast: syn::DeriveInput) -> proc_macro2::TokenStream {
         from_object.push_initializer(field.as_initializer());
     }
     builder.push_method(&build_fn);
-
 
     let tokens = if opts.skip_builder() {
         quote!(#from_object)

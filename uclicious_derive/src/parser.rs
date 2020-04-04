@@ -1,7 +1,7 @@
-use darling::ToTokens;
-use proc_macro2::{TokenStream, Ident};
-use quote::TokenStreamExt;
 use crate::bindings;
+use darling::ToTokens;
+use proc_macro2::{Ident, TokenStream};
+use quote::TokenStreamExt;
 
 pub struct ParserField {}
 
@@ -20,7 +20,6 @@ impl Default for ParserField {
         ParserField {}
     }
 }
-
 
 #[derive(Debug)]
 pub struct ParserMethods {
