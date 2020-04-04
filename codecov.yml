@@ -1,0 +1,4 @@
+ignore:
+  - "uclicious_derive"
+  - "uclicious-example"
+  - "examples"
