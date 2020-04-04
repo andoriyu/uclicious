@@ -296,7 +296,7 @@ let expected = Mapped {
     - Try to convert `ObjectRef` to `Type` and then use `std::convert::From` to convert into target type
  - `try_from = Type`
     - Try to convert `ObjectRef` to `Type` and then use `std::convert::TryFrom` to convert into target type
-    - Error type needs to be convertable into ObjectError
+    - Error will be converted into `ObjectError::Other`
  - `map = path::to_method`
     - `Fn(src: ObjectRef) -> Result<T, E>`
     - A way to map foreign objects that can't implement `From` or `TryFrom` or when error is not convertable into `ObjectError`
