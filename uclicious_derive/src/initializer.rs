@@ -120,6 +120,7 @@ impl<'a> ToTokens for MatchSome<'a> {
         let from_object = bindings::from_object_trait();
         let into_trait = bindings::into_trait();
         let try_into_trait = bindings::try_into_trait();
+        let object_error_ty = bindings::ucl_object_error();
         let quote = match self {
             MatchSome::Simple => quote!(#from_object::try_from(obj)?),
             MatchSome::Validation(path) => quote!(
@@ -131,7 +132,8 @@ impl<'a> ToTokens for MatchSome<'a> {
                 #into_trait::into(v)
             ),
             MatchSome::TryFrom(src_type) => quote!(
-                let v: #src_type = #from_object::try_from(obj)?;
+                let v: #src_type = #from_object::try_from(obj)
+                        .map_err(|e| #object_error_ty::other(e))?;
                 #try_into_trait::try_into(v)?
             ),
             MatchSome::FromValidation(src_type, validation) => quote!(
@@ -141,7 +143,8 @@ impl<'a> ToTokens for MatchSome<'a> {
             ),
             MatchSome::TryFromValidation(src_type, validation) => quote!(
                 let v: #src_type = #from_object::try_from(obj)?;
-                let v = #try_into_trait::try_into(v)?;
+                let v = #try_into_trait::try_into(v)
+                        .map_err(|e| #object_error_ty::other(e))?;
                 #validation(&lookup_path, &v).map(|_| v)?
             ),
             MatchSome::Map(map_func) => quote!(
