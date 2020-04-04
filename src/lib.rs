@@ -203,6 +203,41 @@
 //! };
 //! assert_eq!(expected, actual);
 //! ```
+//!
+//! Additionally you can provide mapping to you type from ObjectRef:
+//! ```rust
+//! use uclicious::*;
+//!
+//! #[derive(Debug, Eq, PartialEq)]
+//! pub enum Mode {
+//!     On,
+//!     Off,
+//! }
+//!
+//! pub fn map_bool(src: ObjectRef) -> Result<Mode, ObjectError> {
+//!     let bool: bool = src.try_into()?;
+//!     if bool {
+//!         Ok(Mode::On)
+//!     } else {
+//!         Ok(Mode::Off)
+//!     }
+//! }
+//! #[derive(Debug,Uclicious, Eq, PartialEq)]
+//! struct Mapped {
+//!    #[ucl(map="map_bool")]
+//!     mode: Mode
+//! }
+//! let mut builder = Mapped::builder().unwrap();
+//!
+//! let input = r#"
+//!     mode = on
+//! "#;
+//! builder.add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY).unwrap();
+//! let actual = builder.build().unwrap();
+//! let expected = Mapped {
+//!     mode: Mode::On
+//! };
+//! ```
 //! ### Supported attributes (`#[ucl(..)]`)
 //!
 //! #### Structure level
@@ -255,6 +290,14 @@
 //!  - `validate = path::to_method`
 //!     - `Fn(key: &str, value: &T) -> Result<(), E>`
 //!     - Error needs to be convertable into `ObjectError`
+//!  - `from = Type`
+//!     - Try to convert `ObjectRef` to `Type` and then use `std::convert::From` to convert into target type
+//!  - `try_from = Type`
+//!     - Try to convert `ObjectRef` to `Type` and then use `std::convert::TryFrom` to convert into target type
+//!     - Error type needs to be convertable into ObjectError
+//!  - `map = path::to_method`
+//!     - `Fn(src: ObjectRef) -> Result<T, E>`
+//!     - A way to map foreign objects that can't implement `From` or `TryFrom` or when error is not convertable into `ObjectError`
 //!
 //! ### Additional notes
 //!  - If target type is an array, but key is a single value — an implicit list is created.
@@ -307,7 +350,7 @@ pub use raw::{
     DuplicateStrategy, Object, ObjectError, ObjectRef, Parser, ParserFlags, Priority,
     DEFAULT_DUPLICATE_STRATEGY, DEFAULT_PARSER_FLAG,
 };
-pub use traits::FromObject;
+pub use traits::{FromObject, TryInto};
 
 #[cfg(feature = "uclicious_derive")]
 #[allow(unused_imports)]

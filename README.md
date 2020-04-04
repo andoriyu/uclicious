@@ -122,6 +122,124 @@ let connection: Connection = builder.build().unwrap();
 
 If you choose to derive builder then `::builder()` method will be added to target struct.
 
+#### Validators
+
+Library supports running optional validators on values before building the resulting struct:
+
+```rust
+use uclicious::*;
+mod validators {
+   use uclicious::ObjectError;
+    pub fn is_positive(lookup_path: &str, value: &i64) -> Result<(), ObjectError> {
+        if *value > 0 {
+            Ok(())
+        } else {
+            Err(ObjectError::other(format!("{} is not a positive number", lookup_path)))
+        }
+    }
+}
+#[derive(Debug,Uclicious)]
+struct Validated {
+   #[ucl(default, validate="validators::is_positive")]
+    number: i64
+}
+let mut builder = Validated::builder().unwrap();
+
+let input = "number = -1";
+builder.add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY).unwrap();
+assert!(builder.build().is_err())
+```
+#### Type Mapping
+
+If your target structure has types that don't implement `FromObject` you can use `From` or `TryFrom`
+via intermediate that does:
+
+```rust
+use uclicious::*;
+use std::convert::{From,TryFrom};
+
+#[derive(Debug, Eq, PartialEq)]
+enum Mode {
+    On,
+    Off,
+}
+
+impl TryFrom<String> for Mode {
+    type Error = ObjectError;
+    fn try_from(src: String) -> Result<Mode, ObjectError> {
+        match src.to_lowercase().as_str() {
+            "on" => Ok(Mode::On),
+            "off" => Ok(Mode::Off),
+            _   => Err(ObjectError::other(format!("{} is not supported value", src)))
+        }
+    }
+}
+
+#[derive(Debug, Eq, PartialEq)]
+struct WrappedInt(i64);
+
+impl From<i64> for WrappedInt {
+    fn from(src: i64) -> WrappedInt {
+        WrappedInt(src)
+    }
+}
+
+#[derive(Debug,Uclicious, Eq, PartialEq)]
+struct Mapped {
+   #[ucl(from="i64")]
+    number: WrappedInt,
+   #[ucl(try_from="String")]
+    mode: Mode
+}
+let mut builder = Mapped::builder().unwrap();
+
+let input = r#"
+    number = -1,
+    mode = "on"
+"#;
+builder.add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY).unwrap();
+let actual = builder.build().unwrap();
+let expected = Mapped {
+number: WrappedInt(-1),
+mode: Mode::On
+};
+assert_eq!(expected, actual);
+```
+
+Additionally you can provide mapping to you type from ObjectRef:
+```rust
+use uclicious::*;
+
+#[derive(Debug, Eq, PartialEq)]
+pub enum Mode {
+    On,
+    Off,
+}
+
+pub fn map_bool(src: ObjectRef) -> Result<Mode, ObjectError> {
+    let bool: bool = src.try_into()?;
+    if bool {
+        Ok(Mode::On)
+    } else {
+        Ok(Mode::Off)
+    }
+}
+#[derive(Debug,Uclicious, Eq, PartialEq)]
+struct Mapped {
+   #[ucl(map="map_bool")]
+    mode: Mode
+}
+let mut builder = Mapped::builder().unwrap();
+
+let input = r#"
+    mode = on
+"#;
+builder.add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY).unwrap();
+let actual = builder.build().unwrap();
+let expected = Mapped {
+    mode: Mode::On
+};
+```
 ### Supported attributes (`#[ucl(..)]`)
 
 #### Structure level
@@ -152,24 +270,36 @@ If you choose to derive builder then `::builder()` method will be added to targe
     - Used to add files into the parser.
     - If file doesn't exist or failed to parse, then error will be returned in a constructor.
     - Has following nested attirbutes:
-        - (required) `path(string)`
+        - (required) `path = string`
             - File path. Can be absolute or relative to CWD.
-        - (optional) `priority(u32)`
+        - (optional) `priority = u32`
             - 0-15 priority for the source. Consult the libUCL documentation for more information.
-        - (optional) `strategy(uclicious::DuplicateStrategy)`
+        - (optional) `strategy = uclicious::DuplicateStrategy`
             - Strategy to use for duplicate keys. Consult the libUCL documentation for more information.
 
 #### Field level
+ All field level options are optional.
 
  - `default`
     - Use Default::default if key not found in object.
- - `default(expression)`
+ - `default = expression`
     - Use this _expression_ as value if key not found.
     - Could be a value or a function call.
- - `path(string)`
+ - `path = string`
     - By default field name is used as path.
     - If set that would be used as a key.
     - dot notation for key is supported.
+ - `validate = path::to_method`
+    - `Fn(key: &str, value: &T) -> Result<(), E>`
+    - Error needs to be convertable into `ObjectError`
+ - `from = Type`
+    - Try to convert `ObjectRef` to `Type` and then use `std::convert::From` to convert into target type
+ - `try_from = Type`
+    - Try to convert `ObjectRef` to `Type` and then use `std::convert::TryFrom` to convert into target type
+    - Error type needs to be convertable into ObjectError
+ - `map = path::to_method`
+    - `Fn(src: ObjectRef) -> Result<T, E>`
+    - A way to map foreign objects that can't implement `From` or `TryFrom` or when error is not convertable into `ObjectError`
 
 ### Additional notes
  - If target type is an array, but key is a single value — an implicit list is created.
