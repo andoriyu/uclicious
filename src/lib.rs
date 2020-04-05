@@ -458,6 +458,22 @@ mod test {
     }
 
     #[test]
+    fn array_from_object_error() {
+        let input = r#"
+            list = [true,true,true,true]
+        "#;
+
+        let mut parser = Parser::default();
+        parser
+            .add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY)
+            .unwrap();
+        let root = parser.get_object().unwrap();
+
+        let actual: Result<Vec<i32>, ObjectError> = FromObject::try_from(root.lookup("list").unwrap());
+        assert!(actual.is_err());
+    }
+
+    #[test]
     fn hashmap_from_object() {
         let input = r#"
             dict {

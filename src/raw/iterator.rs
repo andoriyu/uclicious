@@ -1,7 +1,24 @@
-//! Iterators for `ObjectRef`. Currently, none of them supports implicit arrays. That *may* change in the future, but right not right now.
+//! Iterators for `ObjectRef`.
+//!
+//! #### Automatic arrays creation
+//!
+//! Non-unique keys in an object are allowed and are automatically converted to the arrays internally:
+//!
+//! ```hcl
+//! key = "value1"
+//! key = "value2"
+//! ```
+//! is converted to:
+//!
+//! ```hcl
+//!key = ["value1", "value2"]
+//!```
+//!
+//! Single values are automatically converted into arrays as well.
+//!
 
 use super::object::ObjectRef;
-use libucl_bind::{ucl_object_iterate_free, ucl_object_iterate_new, ucl_object_iterate_safe};
+use libucl_bind::{ucl_object_iterate_free, ucl_object_iterate_new, ucl_object_iterate_full, ucl_iterate_type};
 
 pub struct Iter<'data> {
     object: &'data ObjectRef,
@@ -78,12 +95,14 @@ impl IntoIterator for ObjectRef {
 }
 
 
-fn iterate(object: &ObjectRef, iterator: libucl_bind::ucl_object_iter_t) -> Option<ObjectRef> {
-    // bail early if it's not an array or iterator didn't initialize.
-    if !(object.is_array() || object.is_object()) || iterator.is_null() {
+fn iterate(_object: &ObjectRef, iterator: libucl_bind::ucl_object_iter_t) -> Option<ObjectRef> {
+    // Bail early if iterator didn't initialize.
+    if iterator.is_null() {
         return None;
     }
-    let obj_ptr = unsafe { ucl_object_iterate_safe(iterator, true) };
+    let obj_ptr = unsafe {
+        ucl_object_iterate_full(iterator, ucl_iterate_type::UCL_ITERATE_BOTH)
+    };
 
     ObjectRef::from_c_ptr(obj_ptr)
 }
@@ -112,20 +131,41 @@ mod test {
     }
 
     #[test]
-    fn not_an_array() {
+    fn implicit_array() {
         let mut parser = Parser::default();
-        let input = r#"not_an_array = 1"#;
+        let input = r#"
+            key = "value1",
+            key = "value2"
+        "#;
 
         parser
             .add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY)
             .unwrap();
 
         let result = parser.get_object().unwrap();
-        let lookup_result = result.lookup("not_an_array").unwrap();
+        let lookup_result = result.lookup("key").unwrap();
 
-        let next = lookup_result.iter().next();
+        assert_eq!(2, lookup_result.iter().count());
+    }
 
-        assert!(next.is_none());
+
+    #[test]
+    fn implicit_array_single_element() {
+        let mut parser = Parser::default();
+        let input = r#"
+            key = "value1",
+        "#;
+
+        parser
+            .add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY)
+            .unwrap();
+
+        let result = parser.get_object().unwrap();
+        let lookup_result = result.lookup("key").unwrap();
+        let next = lookup_result.iter().next().unwrap();
+
+        assert_eq!(Some(String::from("key")), next.key());
+        assert_eq!(Some(String::from("value1")), next.as_string());
     }
 
     #[test]
