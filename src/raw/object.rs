@@ -10,7 +10,7 @@ use libucl_bind::{
     ucl_object_get_priority, ucl_object_key, ucl_object_lookup, ucl_object_lookup_path,
     ucl_object_ref, ucl_object_t, ucl_object_toboolean_safe, ucl_object_todouble_safe,
     ucl_object_toint_safe, ucl_object_tostring_forced, ucl_object_tostring_safe, ucl_object_type,
-    ucl_object_unref, ucl_type_t,
+    ucl_object_unref, ucl_type_t, ucl_object_compare,
 };
 use std::borrow::ToOwned;
 use std::collections::HashMap;
@@ -106,6 +106,7 @@ impl fmt::Display for ObjectError {
 
 /// Owned and mutable instance of UCL Object.
 /// All methods that do not require mutability should be implemented on `ObjectRef` instead.
+#[derive(Eq)]
 pub struct Object {
     inner: ObjectRef,
 }
@@ -166,6 +167,7 @@ impl Borrow<ObjectRef> for Object {
 
 /// An immutable reference to UCL Object structure.
 /// Provides most of the libUCL interface for interacting with parser results.
+#[derive(Eq)]
 pub struct ObjectRef {
     object: *mut ucl_object_t,
     kind: ucl_type_t,
@@ -682,5 +684,33 @@ impl ToOwned for ObjectRef {
     fn to_owned(&self) -> Self::Owned {
         let ptr = unsafe { ucl_object_ref(self.as_ptr()) };
         Object::from_c_ptr(ptr).expect("Got ObjectRef with null ptr")
+    }
+}
+
+impl PartialEq for ObjectRef {
+    fn eq(&self, other: &Self) -> bool {
+        let cmp = unsafe { ucl_object_compare(self.as_ptr(), other.as_ptr() )};
+        cmp == 0
+    }
+}
+
+impl PartialEq for Object {
+    fn eq(&self, other: &Self) -> bool {
+        self.as_ref() == other.as_ref()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn eq() {
+        let left = Object::from(1);
+        let right = Object::from(1);
+        let right_but_wrong = Object::from(2);
+
+        assert_eq!(left, right);
+        assert_ne!(left, right_but_wrong);
     }
 }
