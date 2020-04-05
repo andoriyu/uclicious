@@ -204,7 +204,7 @@
 //! assert_eq!(expected, actual);
 //! ```
 //!
-//! Additionally you can provide mapping to you type from ObjectRef:
+//! Additionally you can provide mapping to your type from ObjectRef:
 //! ```rust
 //! use uclicious::*;
 //!
