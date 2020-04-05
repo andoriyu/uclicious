@@ -6,7 +6,7 @@ use std::fmt;
 
 use libucl_bind::{ucl_error_t, ucl_schema_error_code};
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum UclErrorType {
     Ok,
     Syntax,
@@ -87,6 +87,10 @@ impl Error for UclError {
 impl UclError {
     pub fn boxed(self) -> Box<UclError> {
         Box::new(self)
+    }
+
+    pub fn kind(&self) -> UclErrorType {
+        self.code
     }
 }
 
