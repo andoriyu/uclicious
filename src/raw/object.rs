@@ -595,16 +595,14 @@ where
     T: FromObject<ObjectRef>,
 {
     fn try_from(value: ObjectRef) -> Result<Self, ObjectError> {
-        if ucl_type_t::UCL_ARRAY == value.kind {
-            let ret: Vec<Result<T, ObjectError>> = value.iter().map(T::try_from).collect();
-            if let Some(Err(e)) = ret.iter().find(|e| e.is_err()) {
-                Err(e.clone())
-            } else {
-                let list: Vec<T> = ret.into_iter().map(Result::unwrap).collect();
-                Ok(list)
-            }
+        let ret = value.iter()
+            .map(T::try_from)
+            .collect::<Vec<Result<T, ObjectError>>>();
+        if let Some(Err(err)) = ret.iter().find(|e| e.is_err()) {
+            Err(err.clone())
         } else {
-            FromObject::try_from(value).map(|e| vec![e])
+            let list = ret.into_iter().filter_map(|e| e.ok() ).collect();
+            Ok(list)
         }
     }
 }
