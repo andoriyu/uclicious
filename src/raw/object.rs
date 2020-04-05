@@ -10,7 +10,7 @@ use libucl_bind::{
     ucl_object_get_priority, ucl_object_key, ucl_object_lookup, ucl_object_lookup_path,
     ucl_object_ref, ucl_object_t, ucl_object_toboolean_safe, ucl_object_todouble_safe,
     ucl_object_toint_safe, ucl_object_tostring_forced, ucl_object_tostring_safe, ucl_object_type,
-    ucl_object_unref, ucl_type_t, ucl_object_compare,
+    ucl_object_unref, ucl_type_t, ucl_object_compare, ucl_object_copy
 };
 use std::borrow::ToOwned;
 use std::collections::HashMap;
@@ -193,6 +193,12 @@ impl ObjectRef {
             kind,
         };
         Some(result)
+    }
+
+    /// Perform a deep copy
+    pub fn deep_copy(&self) -> Object {
+        let ptr = unsafe { ucl_object_copy(self.as_ptr()) };
+        Object::from_c_ptr(ptr).expect("Got Object with null ptr")
     }
 
     /// Returns `true` if this object is a null.
@@ -700,6 +706,13 @@ impl PartialEq for Object {
     }
 }
 
+impl Clone for Object {
+    fn clone(&self) -> Self {
+        let ptr = unsafe { ucl_object_ref(self.as_ptr()) };
+        Object::from_c_ptr(ptr).expect("Got ObjectRef with null ptr")
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -712,5 +725,13 @@ mod test {
 
         assert_eq!(left, right);
         assert_ne!(left, right_but_wrong);
+    }
+
+    #[test]
+    fn deep_copy() {
+        let left = Object::from(1);
+        let right = left.deep_copy();
+        assert_eq!(left, right);
+        assert_ne!(left.as_ptr(), right.as_ptr());
     }
 }
