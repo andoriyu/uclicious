@@ -317,8 +317,8 @@
 //!  - Optimize derive code.
 //!  - Improve documentation — I often write late and night and some it might look like a word soup.
 //!  - Better tests
-//!  - `from` and `try_from` like in serder [#3]
 //!  - Glob support in derive parser section
+//!  - Variable handler
 //!  
 //!
 //! ## Goals
