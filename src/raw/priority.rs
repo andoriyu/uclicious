@@ -13,11 +13,7 @@ pub struct Priority(c_uint);
 impl Priority {
     #[inline(always)]
     fn normalize_unsigned(source: u32) -> Priority {
-        let priority = if source > 15 {
-            15
-        } else {
-            source
-        };
+        let priority = if source > 15 { 15 } else { source };
         Priority(priority)
     }
 
@@ -31,7 +27,6 @@ impl Priority {
             source
         };
         Priority(priority as u32)
-
     }
 
     /// Create a Priority. Values outside of 0..15 range will be changed to nearest "legal" number.
@@ -99,8 +94,8 @@ impl From<i8> for Priority {
 #[cfg(test)]
 mod test {
     use super::*;
-    use std::convert::Into;
     use std::convert::From;
+    use std::convert::Into;
 
     #[test]
     fn test_native_type() {
@@ -133,7 +128,6 @@ mod test {
         assert_eq!(expected, from_u64);
     }
 
-
     #[test]
     fn test_from_trait_unsigned_higher() {
         let expected = Priority::new(15);
@@ -165,7 +159,6 @@ mod test {
         let from_i64: Priority = 1i64.into();
         assert_eq!(expected, from_i64);
     }
-
 
     #[test]
     fn test_from_trait_signed_higher() {
