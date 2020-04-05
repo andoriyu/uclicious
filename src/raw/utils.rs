@@ -12,3 +12,23 @@ pub(crate) fn to_str(cstring: *const c_char) -> Option<String> {
 pub(crate) fn to_c_string<S: AsRef<str>>(str: S) -> CString {
     CString::new(str.as_ref().as_bytes()).expect("Path cannot contain null character")
 }
+
+
+#[cfg(test)]
+mod test {
+    use crate::raw::utils::{to_str, to_c_string};
+
+    #[test]
+    fn nullpointer() {
+        let np = std::ptr::null();
+        let result = to_str(np);
+        assert!(result.is_none());
+    }
+
+    #[test]
+    #[should_panic]
+    fn to_c_string_with_null() {
+        let input = "abc\0d";
+        let _ = to_c_string(input);
+    }
+}
