@@ -1,4 +1,26 @@
-//! Output of the parser.
+//! Objects parsed by the parser.
+//!
+//! When you are done feeding the parser call `::get_object()` method on a parser. This will give you
+//! an owned copy of an `Object`. Difference between `Object` and `ObjectRef` - internal reference count is only decreased for `Object` when dropped.
+//!
+//! ### Cloning
+//!
+//! Due to how rust std lib blanket impls work it's impossible to clone `ObjectRef` without converting it into owned `Object`.
+//! `Object` implements clone by increasing reference count of object.
+//!
+//! #### Deep Cloning
+//!
+//! It's possible to create a deep copy of an `Object` and `ObjectRef` by calling `ObjectRef::deep_copy()`. Copy returned by that method is a completly different object with different address in memory.
+//!
+//! ### Equality and Ordering
+//!
+//! Literally all objects can be compared. The order:
+//!
+//! 1. Type of objects
+//! 2. Size of objects
+//! 3. Content of objects
+//!
+//! That means you can compare a string to float, and it will give some result. I'm not sure about usefulness of this, but it is totally possible.
 use crate::raw::iterator::Iter;
 use crate::raw::{utils, Priority};
 use crate::traits::FromObject;
@@ -25,6 +47,7 @@ use std::num::TryFromIntError;
 use std::ops::{Deref, DerefMut};
 use std::path::PathBuf;
 use std::time::Duration;
+use bitflags::_core::cmp::Ordering;
 
 /// Errors that could be returned by `Object` or `ObjectRef` functions.
 #[derive(Eq, PartialEq, Debug, Clone)]
@@ -711,6 +734,35 @@ impl Clone for Object {
     }
 }
 
+impl PartialOrd for ObjectRef {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        let cmp = unsafe { ucl_object_compare(self.as_ptr(), other.as_ptr() )};
+        match cmp {
+            cmp if cmp == 0 => Some(Ordering::Equal),
+            cmp if cmp < 0 => Some(Ordering::Less),
+            cmp if cmp > 0 => Some(Ordering::Greater),
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl Ord for ObjectRef {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.partial_cmp(other).unwrap()
+    }
+}
+
+impl PartialOrd for Object {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.as_ref().partial_cmp(other.as_ref())
+    }
+}
+
+impl Ord for Object {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.partial_cmp(other).unwrap()
+    }
+}
 #[cfg(test)]
 mod test {
     use super::*;
@@ -731,5 +783,30 @@ mod test {
         let right = left.deep_copy();
         assert_eq!(left, right);
         assert_ne!(left.as_ptr(), right.as_ptr());
+    }
+
+    #[test]
+    fn order_good() {
+        let left = Object::from(1);
+        let right = Object::from(2);
+
+        assert!(left < right);
+    }
+
+    #[test]
+    fn order_int_and_float() {
+
+        let left = Object::from(1);
+        let right = Object::from(1.5);
+
+        assert!(left < right);
+    }
+
+    #[test]
+    fn order_wtf() {
+        let left = Object::from("a string?");
+        let right = Object::from(2);
+
+        assert_ne!(left, right);
     }
 }
