@@ -206,3 +206,20 @@ impl fmt::Debug for Parser {
             .finish()
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::{DEFAULT_DUPLICATE_STRATEGY, UclErrorType};
+    use std::path::PathBuf;
+
+    #[test]
+    fn incomplete_input() {
+        let input = "key =";
+        let mut parser = Parser::default();
+        let chunk = parser.add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY);
+        assert!(chunk.is_err());
+        let err = chunk.unwrap_err();
+        assert_eq!(UclErrorType::Syntax, err.kind())
+    }
+}
