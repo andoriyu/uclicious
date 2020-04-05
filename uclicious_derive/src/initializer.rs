@@ -60,10 +60,16 @@ impl<'a> Initializer<'a> {
             (Some(validation), None, None, None) => MatchSome::Validation(validation),
             (None, Some(src_type), None, None) => MatchSome::From(src_type),
             (None, None, Some(src_type), None) => MatchSome::TryFrom(src_type),
-            (Some(validation), Some(from), None, None) => MatchSome::FromValidation(from, validation),
-            (Some(validation), None, Some(from), None) => MatchSome::TryFromValidation(from, validation),
+            (Some(validation), Some(from), None, None) => {
+                MatchSome::FromValidation(from, validation)
+            }
+            (Some(validation), None, Some(from), None) => {
+                MatchSome::TryFromValidation(from, validation)
+            }
             (None, None, None, Some(map_func)) => MatchSome::Map(map_func),
-            (Some(validation), None, None, Some(map_func)) => MatchSome::MapValidation(map_func, validation),
+            (Some(validation), None, None, Some(map_func)) => {
+                MatchSome::MapValidation(map_func, validation)
+            }
             _ => panic!(
                 "field {}: map, from and try_from are mutually exclusive",
                 self.field_ident
@@ -153,7 +159,7 @@ impl<'a> ToTokens for MatchSome<'a> {
             MatchSome::MapValidation(map_func, validation) => quote!(
                 let v = #map_func(obj)?;
                 #validation(&lookup_path, &v).map(|_| v)?
-            )
+            ),
         };
         tokens.append_all(quote);
     }
