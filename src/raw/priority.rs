@@ -7,6 +7,7 @@ use std::os::raw::c_uint;
 ///
 /// By default, the priority of top-level object is set to zero (the lowest priority). Currently, you can define up to 16 priorities (from 0 to 15).
 /// Includes with bigger priorities will rewrite keys from the objects with lower priorities as specified by the policy.
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub struct Priority(c_uint);
 
 impl Priority {
