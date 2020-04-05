@@ -5,7 +5,7 @@ use std::os::raw::c_uint;
 /// - If a new object has bigger priority then we overwrite an old one
 /// - If a new object has lower priority then we ignore it
 ///
-/// By default, the priority of top-level object is set to zero (the lowest priority). Currently, you can define up to 16 priorities (from 0 to 15).
+/// By default, the priority of top-level object is set to zero (the lowest priority). Currently, you can define up to 16 priorities (from 0 to 16).
 /// Includes with bigger priorities will rewrite keys from the objects with lower priorities as specified by the policy.
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub struct Priority(c_uint);
@@ -13,14 +13,14 @@ pub struct Priority(c_uint);
 impl Priority {
     #[inline(always)]
     fn normalize_unsigned(source: u32) -> Priority {
-        let priority = if source > 15 { 15 } else { source };
+        let priority = if source > 16 { 16 } else { source };
         Priority(priority)
     }
 
     #[inline(always)]
     fn normalize_signed(source: i64) -> Priority {
-        let priority = if source > 15 {
-            15
+        let priority = if source > 16 {
+            16
         } else if source < 0 {
             0
         } else {
@@ -29,7 +29,7 @@ impl Priority {
         Priority(priority as u32)
     }
 
-    /// Create a Priority. Values outside of 0..15 range will be changed to nearest "legal" number.
+    /// Create a Priority. Values outside of 0..16 range will be changed to nearest "legal" number.
     #[inline(always)]
     pub fn new(priority: u32) -> Priority {
         Priority::normalize_unsigned(priority)
@@ -103,7 +103,7 @@ mod test {
         assert_eq!(1, priority.as_c_uint());
 
         let higher = Priority::new(256);
-        assert_eq!(15, higher.as_c_uint());
+        assert_eq!(16, higher.as_c_uint());
 
         let zero = Priority::new(0);
         assert_eq!(0, zero.as_c_uint());
@@ -130,7 +130,7 @@ mod test {
 
     #[test]
     fn test_from_trait_unsigned_higher() {
-        let expected = Priority::new(15);
+        let expected = Priority::new(16);
         let from_u8: Priority = 42u8.into();
         assert_eq!(expected, from_u8);
 
@@ -162,7 +162,7 @@ mod test {
 
     #[test]
     fn test_from_trait_signed_higher() {
-        let expected = Priority::new(15);
+        let expected = Priority::new(16);
         let from_i8: Priority = 42i8.into();
         assert_eq!(expected, from_i8);
 
