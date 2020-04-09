@@ -41,7 +41,6 @@ jobs:
     - script: |
         cargo install cargo-tarpaulin -f
         sudo RUSTFLAGS="-C link-dead-code" $(which cargo) tarpaulin --out Xml
-        bash <(curl -s https://codecov.io/bash)
       displayName: Run Coverage
       condition: and(succeeded(),eq(variables['rustup_toolchain'], 'stable'))
     - task: PublishCodeCoverageResults@1
