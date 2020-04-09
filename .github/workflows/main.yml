@@ -1,7 +1,5 @@
-on:
-  pull_request:
-    branches: [ master ]
-name: Clippy check
+on: push
+name: Quick Checks
 jobs:
   clippy_check:
     runs-on: ubuntu-latest
@@ -17,8 +15,8 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           args: --all-features
-  rust_fmt:
-    name: Formatting check
+  cargo_check:
+    name: Cargo Check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
