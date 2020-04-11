@@ -344,6 +344,7 @@
 pub mod error;
 pub mod raw;
 pub mod traits;
+pub mod variable_handlers;
 
 pub use error::{UclError, UclErrorType};
 pub use raw::{
