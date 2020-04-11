@@ -238,7 +238,7 @@ mod test {
 
     #[test]
     fn basic_vars_handler() {
-        unsafe extern "C" fn simple(
+        extern "C" fn simple(
             data: *const ::std::os::raw::c_uchar,
             len: usize,
             replace: *mut *mut ::std::os::raw::c_uchar,
