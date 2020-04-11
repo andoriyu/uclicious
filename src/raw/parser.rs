@@ -19,6 +19,7 @@ use libucl_bind::{
     ucl_parse_type, ucl_parser, ucl_parser_add_chunk_full, ucl_parser_add_fd_full,
     ucl_parser_add_file_full, ucl_parser_free, ucl_parser_get_error, ucl_parser_get_error_code,
     ucl_parser_get_object, ucl_parser_new, ucl_parser_register_variable, ucl_parser_set_filevars,
+    ucl_parser_set_variables_handler, ucl_variable_handler,
 };
 
 #[cfg(unix)]
@@ -191,6 +192,17 @@ impl Parser {
         };
         self
     }
+
+    pub fn set_variables_handler_raw(
+        &mut self,
+        handler: ucl_variable_handler,
+        ud: *mut std::ffi::c_void,
+    ) -> &mut Self {
+        unsafe {
+            ucl_parser_set_variables_handler(self.parser, handler, ud);
+        }
+        self
+    }
 }
 
 impl Drop for Parser {
@@ -221,5 +233,108 @@ mod test {
         assert!(chunk.is_err());
         let err = chunk.unwrap_err();
         assert_eq!(UclErrorType::Syntax, err.kind())
+    }
+
+    #[test]
+    fn basic_vars_handler() {
+        unsafe extern "C" fn simple(
+            data: *const ::std::os::raw::c_uchar,
+            len: usize,
+            replace: *mut *mut ::std::os::raw::c_uchar,
+            replace_len: *mut usize,
+            need_free: *mut bool,
+            _ud: *mut ::std::os::raw::c_void,
+        ) -> bool {
+            let var = unsafe {
+                let slice = slice_from_raw_parts(data, len).as_ref().unwrap();
+                std::str::from_utf8(slice).unwrap()
+            };
+            unsafe {
+                *need_free = false;
+            }
+            if var.eq("WWW") {
+                let test = "asd";
+                let size = test.as_bytes().len();
+                unsafe {
+                    *replace = libc::malloc(size).cast();
+                    *replace_len = size;
+                    test.as_bytes()
+                        .as_ptr()
+                        .copy_to_nonoverlapping(*replace, size);
+                    *need_free = true;
+                }
+                true
+            } else {
+                false
+            }
+        }
+
+        let input = r#"
+        key = "${WWW}"
+        "#;
+        let mut parser = Parser::default();
+        parser.set_variables_handler_raw(Some(simple), std::ptr::null_mut());
+        parser
+            .add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY)
+            .unwrap();
+
+        let root = parser.get_object().unwrap();
+
+        let looked_up_object = root.lookup("key").unwrap();
+        dbg!(&looked_up_object);
+
+        let object = looked_up_object.as_string().unwrap();
+        assert_eq!("asd", object.as_str());
+    }
+
+    #[test]
+    fn var_handler_with_closure() {
+        let mut basic = |data: *const ::std::os::raw::c_uchar,
+                         len: usize,
+                         replace: *mut *mut ::std::os::raw::c_uchar,
+                         replace_len: *mut usize,
+                         need_free: *mut bool| {
+            let var = unsafe {
+                let slice = slice_from_raw_parts(data, len).as_ref().unwrap();
+                std::str::from_utf8(slice).unwrap()
+            };
+            unsafe {
+                *need_free = false;
+            }
+            if var.eq("WWW") {
+                let test = "asd";
+                let size = test.as_bytes().len();
+                unsafe {
+                    *replace = libc::malloc(size).cast();
+                    *replace_len = size;
+                    test.as_bytes()
+                        .as_ptr()
+                        .copy_to_nonoverlapping(*replace, size);
+                    *need_free = true;
+                }
+                true
+            } else {
+                false
+            }
+        };
+
+        let (state, callback) = basic.get_fn_ptr_and_data();
+
+        let input = r#"
+        key = "${WWW}"
+        "#;
+        let mut parser = Parser::default();
+        parser.set_variables_handler_raw(callback, state);
+        parser
+            .add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY)
+            .unwrap();
+
+        let root = parser.get_object().unwrap();
+
+        let looked_up_object = root.lookup("key").unwrap();
+        dbg!(&looked_up_object);
+
+        let object = looked_up_object.as_string().unwrap();
+        assert_eq!("asd", object.as_str());
     }
 }
