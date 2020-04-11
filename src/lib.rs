@@ -470,7 +470,8 @@ mod test {
             .unwrap();
         let root = parser.get_object().unwrap();
 
-        let actual: Result<Vec<i32>, ObjectError> = FromObject::try_from(root.lookup("list").unwrap());
+        let actual: Result<Vec<i32>, ObjectError> =
+            FromObject::try_from(root.lookup("list").unwrap());
         assert!(actual.is_err());
     }
 

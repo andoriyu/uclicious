@@ -18,7 +18,9 @@
 //!
 
 use super::object::ObjectRef;
-use libucl_bind::{ucl_object_iterate_free, ucl_object_iterate_new, ucl_object_iterate_full, ucl_iterate_type};
+use libucl_bind::{
+    ucl_iterate_type, ucl_object_iterate_free, ucl_object_iterate_full, ucl_object_iterate_new,
+};
 
 pub struct Iter<'data> {
     object: &'data ObjectRef,
@@ -94,15 +96,12 @@ impl IntoIterator for ObjectRef {
     }
 }
 
-
 fn iterate(_object: &ObjectRef, iterator: libucl_bind::ucl_object_iter_t) -> Option<ObjectRef> {
     // Bail early if iterator didn't initialize.
     if iterator.is_null() {
         return None;
     }
-    let obj_ptr = unsafe {
-        ucl_object_iterate_full(iterator, ucl_iterate_type::UCL_ITERATE_BOTH)
-    };
+    let obj_ptr = unsafe { ucl_object_iterate_full(iterator, ucl_iterate_type::UCL_ITERATE_BOTH) };
 
     ObjectRef::from_c_ptr(obj_ptr)
 }
@@ -123,7 +122,10 @@ mod test {
         let result = parser.get_object().unwrap();
         let lookup_result = result.lookup("array").unwrap();
 
-        let actual: Vec<i64> = lookup_result.iter().map(|obj| obj.as_i64().unwrap()).collect();
+        let actual: Vec<i64> = lookup_result
+            .iter()
+            .map(|obj| obj.as_i64().unwrap())
+            .collect();
 
         let expected = vec![1i64, 2, 3];
 
@@ -147,7 +149,6 @@ mod test {
 
         assert_eq!(2, lookup_result.iter().count());
     }
-
 
     #[test]
     fn implicit_array_single_element() {
@@ -210,7 +211,6 @@ mod test {
 
     #[test]
     fn iter_object() {
-
         let mut parser = Parser::default();
         let input = r#"dict = {
             a = 1,

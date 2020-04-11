@@ -25,14 +25,16 @@ use crate::raw::iterator::Iter;
 use crate::raw::{utils, Priority};
 use crate::traits::FromObject;
 use bitflags::_core::borrow::Borrow;
+use bitflags::_core::cmp::Ordering;
 use bitflags::_core::convert::Infallible;
 use bitflags::_core::fmt::{Display, Formatter};
 use libucl_bind::{
-    ucl_object_frombool, ucl_object_fromdouble, ucl_object_fromint, ucl_object_fromstring,
-    ucl_object_get_priority, ucl_object_key, ucl_object_lookup, ucl_object_lookup_path,
-    ucl_object_ref, ucl_object_t, ucl_object_toboolean_safe, ucl_object_todouble_safe,
-    ucl_object_toint_safe, ucl_object_tostring_forced, ucl_object_tostring_safe, ucl_object_type,
-    ucl_object_unref, ucl_type_t, ucl_object_compare, ucl_object_copy
+    ucl_object_compare, ucl_object_copy, ucl_object_frombool, ucl_object_fromdouble,
+    ucl_object_fromint, ucl_object_fromstring, ucl_object_get_priority, ucl_object_key,
+    ucl_object_lookup, ucl_object_lookup_path, ucl_object_ref, ucl_object_t,
+    ucl_object_toboolean_safe, ucl_object_todouble_safe, ucl_object_toint_safe,
+    ucl_object_tostring_forced, ucl_object_tostring_safe, ucl_object_type, ucl_object_unref,
+    ucl_type_t,
 };
 use std::borrow::ToOwned;
 use std::collections::HashMap;
@@ -47,7 +49,6 @@ use std::num::TryFromIntError;
 use std::ops::{Deref, DerefMut};
 use std::path::PathBuf;
 use std::time::Duration;
-use bitflags::_core::cmp::Ordering;
 
 /// Errors that could be returned by `Object` or `ObjectRef` functions.
 #[derive(Eq, PartialEq, Debug, Clone)]
@@ -624,13 +625,14 @@ where
     T: FromObject<ObjectRef>,
 {
     fn try_from(value: ObjectRef) -> Result<Self, ObjectError> {
-        let ret = value.iter()
+        let ret = value
+            .iter()
             .map(T::try_from)
             .collect::<Vec<Result<T, ObjectError>>>();
         if let Some(Err(err)) = ret.iter().find(|e| e.is_err()) {
             Err(err.clone())
         } else {
-            let list = ret.into_iter().filter_map(|e| e.ok() ).collect();
+            let list = ret.into_iter().filter_map(|e| e.ok()).collect();
             Ok(list)
         }
     }
@@ -716,7 +718,7 @@ impl ToOwned for ObjectRef {
 
 impl PartialEq for ObjectRef {
     fn eq(&self, other: &Self) -> bool {
-        let cmp = unsafe { ucl_object_compare(self.as_ptr(), other.as_ptr() )};
+        let cmp = unsafe { ucl_object_compare(self.as_ptr(), other.as_ptr()) };
         cmp == 0
     }
 }
@@ -736,7 +738,7 @@ impl Clone for Object {
 
 impl PartialOrd for ObjectRef {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        let cmp = unsafe { ucl_object_compare(self.as_ptr(), other.as_ptr() )};
+        let cmp = unsafe { ucl_object_compare(self.as_ptr(), other.as_ptr()) };
         match cmp {
             cmp if cmp == 0 => Some(Ordering::Equal),
             cmp if cmp < 0 => Some(Ordering::Less),
@@ -795,7 +797,6 @@ mod test {
 
     #[test]
     fn order_int_and_float() {
-
         let left = Object::from(1);
         let right = Object::from(1.5);
 

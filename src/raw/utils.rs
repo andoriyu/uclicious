@@ -13,10 +13,9 @@ pub(crate) fn to_c_string<S: AsRef<str>>(str: S) -> CString {
     CString::new(str.as_ref().as_bytes()).expect("Path cannot contain null character")
 }
 
-
 #[cfg(test)]
 mod test {
-    use crate::raw::utils::{to_str, to_c_string};
+    use crate::raw::utils::{to_c_string, to_str};
 
     #[test]
     fn nullpointer() {
