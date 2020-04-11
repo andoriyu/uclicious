@@ -222,8 +222,9 @@ impl fmt::Debug for Parser {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{DEFAULT_DUPLICATE_STRATEGY, UclErrorType};
-    use std::path::PathBuf;
+    use crate::traits::{unpack_closure, VariableHandler};
+    use crate::{UclErrorType, DEFAULT_DUPLICATE_STRATEGY};
+    use bitflags::_core::ptr::slice_from_raw_parts;
 
     #[test]
     fn incomplete_input() {
