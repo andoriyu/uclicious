@@ -222,7 +222,7 @@ impl fmt::Debug for Parser {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::traits::{unpack_closure, VariableHandler};
+    use crate::traits::VariableHandler;
     use crate::{UclErrorType, DEFAULT_DUPLICATE_STRATEGY};
     use bitflags::_core::ptr::slice_from_raw_parts;
 
