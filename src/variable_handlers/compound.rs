@@ -75,7 +75,7 @@ mod test {
 
     #[test]
     fn compound_handler() {
-        let mut www = |data: *const ::std::os::raw::c_uchar,
+        let www = |data: *const ::std::os::raw::c_uchar,
                        len: usize,
                        replace: *mut *mut ::std::os::raw::c_uchar,
                        replace_len: *mut usize,
@@ -101,7 +101,7 @@ mod test {
             }
         };
 
-        let mut zzz = |data: *const ::std::os::raw::c_uchar,
+        let zzz = |data: *const ::std::os::raw::c_uchar,
                        len: usize,
                        replace: *mut *mut ::std::os::raw::c_uchar,
                        replace_len: *mut usize,

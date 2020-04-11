@@ -20,7 +20,10 @@ libc = "0.2"
 uclicious_derive = { path = "uclicious_derive", version = "=0.1.3"}
 
 [features]
-default = ["derive"]
+vh_env = []
+vh_compound = []
+vh_basic = ["vh_env", "vh_compound"]
+default = ["derive", "vh_basic"]
 derive = ["uclicious_derive"]
 
 [[example]]
