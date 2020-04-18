@@ -12,7 +12,7 @@ homepage = "https://github.com/andoriyu/uclicious"
 readme = "README.md"
 
 [dependencies]
-libucl-bind = { package = "uclicious-libucl-sys", version = "0.8.2-alpha.1" }
+libucl-bind = { package = "uclicious-libucl-sys", version = "0.8.2-alpha.2" }
 bitflags = "1.2.1"
 uclicious_derive = { path = "uclicious_derive", optional = true, version = "=0.1.3" }
 libc = "0.2"
