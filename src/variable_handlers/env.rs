@@ -73,12 +73,13 @@ mod test {
         let mut handler = EnvVariableHandler::default();
         let (state, callback) = handler.get_fn_ptr_and_data();
 
-        let good_var = "ENV_RZZYIBBEBD";
-        let bad_var = "ENV_AGBDMXLAAH";
-
-        std::env::set_var(good_var, "yes");
-        std::env::remove_var(bad_var);
-        std::env::set_var("RZZYIBBEBD", "yes");
+        if std::env::var("BUILD_BUILDID").is_err() {
+            let good_var = "ENV_RZZYIBBEBD";
+            let bad_var = "ENV_AGBDMXLAAH";
+            std::env::set_var(good_var, "yes");
+            std::env::remove_var(bad_var);
+            std::env::set_var("RZZYIBBEBD", "yes");
+        }
 
         let input = r#"
         good = "${ENV_RZZYIBBEBD}"
