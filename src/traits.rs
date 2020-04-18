@@ -34,7 +34,12 @@ pub trait VariableHandler {
     fn get_fn_ptr_and_data(&mut self) -> (*mut c_void, ucl_variable_handler);
 }
 
-pub unsafe fn unpack_closure<F>(closure: &mut F) -> (*mut c_void, ucl_variable_handler)
+/// Unpack closure into a data (context) and function pointer.
+///
+/// # Safety
+///
+/// Caller need to ensure that closure lives as log as the pointer does.
+pub(crate) unsafe fn unpack_closure<F>(closure: &mut F) -> (*mut c_void, ucl_variable_handler)
 where
     F: FnMut(*const c_uchar, usize, *mut *mut c_uchar, *mut usize, *mut bool) -> bool,
 {
