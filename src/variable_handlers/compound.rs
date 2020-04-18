@@ -76,10 +76,10 @@ mod test {
     #[test]
     fn compound_handler() {
         let www = |data: *const ::std::os::raw::c_uchar,
-                       len: usize,
-                       replace: *mut *mut ::std::os::raw::c_uchar,
-                       replace_len: *mut usize,
-                       need_free: *mut bool| {
+                   len: usize,
+                   replace: *mut *mut ::std::os::raw::c_uchar,
+                   replace_len: *mut usize,
+                   need_free: *mut bool| {
             let var = unsafe {
                 let slice = slice_from_raw_parts(data, len).as_ref().unwrap();
                 std::str::from_utf8(slice).unwrap()
@@ -102,10 +102,10 @@ mod test {
         };
 
         let zzz = |data: *const ::std::os::raw::c_uchar,
-                       len: usize,
-                       replace: *mut *mut ::std::os::raw::c_uchar,
-                       replace_len: *mut usize,
-                       need_free: *mut bool| {
+                   len: usize,
+                   replace: *mut *mut ::std::os::raw::c_uchar,
+                   replace_len: *mut usize,
+                   need_free: *mut bool| {
             let var = unsafe {
                 let slice = slice_from_raw_parts(data, len).as_ref().unwrap();
                 std::str::from_utf8(slice).unwrap()
@@ -137,7 +137,9 @@ mod test {
         key1 = "${WWW}"
         "#;
         let mut parser = Parser::default();
-        unsafe { parser.set_variables_handler_raw(callback, state); }
+        unsafe {
+            parser.set_variables_handler_raw(callback, state);
+        }
         parser
             .add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY)
             .unwrap();
