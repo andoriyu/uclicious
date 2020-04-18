@@ -11,13 +11,13 @@ use std::os::raw::c_uint;
 pub struct Priority(c_uint);
 
 impl Priority {
-    #[inline(always)]
+    #[inline]
     fn normalize_unsigned(source: u32) -> Priority {
         let priority = if source > 16 { 16 } else { source };
         Priority(priority)
     }
 
-    #[inline(always)]
+    #[inline]
     fn normalize_signed(source: i64) -> Priority {
         let priority = if source > 16 {
             16
@@ -30,13 +30,13 @@ impl Priority {
     }
 
     /// Create a Priority. Values outside of 0..16 range will be changed to nearest "legal" number.
-    #[inline(always)]
+    #[inline]
     pub fn new(priority: u32) -> Priority {
         Priority::normalize_unsigned(priority)
     }
 
-    #[inline(always)]
-    pub fn as_c_uint(&self) -> c_uint {
+    #[inline]
+    pub fn as_c_uint(self) -> c_uint {
         self.0
     }
 }
