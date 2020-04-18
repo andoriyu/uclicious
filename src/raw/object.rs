@@ -687,11 +687,11 @@ impl FromObject<ObjectRef> for Duration {
         if let Some(seconds) = value.as_time() {
             Ok(Duration::from_secs_f64(seconds))
         } else {
-            return Err(ObjectError::WrongType {
+            Err(ObjectError::WrongType {
                 key: value.key().unwrap_or_default(),
                 actual_type: value.kind,
                 wanted_type: ucl_type_t::UCL_TIME,
-            });
+            })
         }
     }
 }

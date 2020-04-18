@@ -63,7 +63,7 @@ impl VariableHandler for CompoundHandler {
     }
 
     fn get_fn_ptr_and_data(&mut self) -> (*mut c_void, ucl_variable_handler) {
-        return unsafe { unpack_closure(&mut self.closure) };
+        unsafe { unpack_closure(&mut self.closure) }
     }
 }
 
