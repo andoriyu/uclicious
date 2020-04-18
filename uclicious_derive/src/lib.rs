@@ -31,6 +31,7 @@ pub fn derive(input: TokenStream) -> TokenStream {
     derive_for_struct(ast).into()
 }
 
+#[allow(clippy::let_and_return)]
 fn derive_for_struct(ast: syn::DeriveInput) -> proc_macro2::TokenStream {
     let opts: Options = match Options::from_derive_input(&ast) {
         Ok(val) => val,

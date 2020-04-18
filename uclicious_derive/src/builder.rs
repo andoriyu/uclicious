@@ -47,8 +47,7 @@ impl<'a> Builder<'a> {
     /// `Clone`, `Default`, `PartialEq`, and other traits work.
     fn compute_impl_bounds(&self) -> syn::Generics {
         if let Some(type_gen) = self.generics {
-            let generics = type_gen.clone();
-            return generics;
+            type_gen.clone()
         } else {
             Default::default()
         }
