@@ -193,14 +193,20 @@ impl Parser {
         self
     }
 
-    pub fn set_variables_handler_raw(
+    /// Register function as an unknown variable handler.
+    ///
+    /// - *handler* - a function pointer
+    /// - *ud* - an opaque pointer that will be passed to a handler
+    ///
+    /// # Safety
+    ///
+    /// Both object behind `ud` and function behind `handler` need to live at least as long as the parser.
+    pub unsafe fn set_variables_handler_raw(
         &mut self,
         handler: ucl_variable_handler,
         ud: *mut std::ffi::c_void,
     ) -> &mut Self {
-        unsafe {
-            ucl_parser_set_variables_handler(self.parser, handler, ud);
-        }
+        ucl_parser_set_variables_handler(self.parser, handler, ud);
         self
     }
 }
@@ -274,7 +280,7 @@ mod test {
         key = "${WWW}"
         "#;
         let mut parser = Parser::default();
-        parser.set_variables_handler_raw(Some(simple), std::ptr::null_mut());
+        unsafe { parser.set_variables_handler_raw(Some(simple), std::ptr::null_mut()); }
         parser
             .add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY)
             .unwrap();
@@ -325,7 +331,7 @@ mod test {
         key = "${WWW}"
         "#;
         let mut parser = Parser::default();
-        parser.set_variables_handler_raw(callback, state);
+        unsafe { parser.set_variables_handler_raw(callback, state); }
         parser
             .add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY)
             .unwrap();

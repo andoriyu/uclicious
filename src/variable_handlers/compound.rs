@@ -137,7 +137,7 @@ mod test {
         key1 = "${WWW}"
         "#;
         let mut parser = Parser::default();
-        parser.set_variables_handler_raw(callback, state);
+        unsafe { parser.set_variables_handler_raw(callback, state); }
         parser
             .add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY)
             .unwrap();
