@@ -280,7 +280,9 @@ mod test {
         key = "${WWW}"
         "#;
         let mut parser = Parser::default();
-        unsafe { parser.set_variables_handler_raw(Some(simple), std::ptr::null_mut()); }
+        unsafe {
+            parser.set_variables_handler_raw(Some(simple), std::ptr::null_mut());
+        }
         parser
             .add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY)
             .unwrap();
@@ -331,7 +333,9 @@ mod test {
         key = "${WWW}"
         "#;
         let mut parser = Parser::default();
-        unsafe { parser.set_variables_handler_raw(callback, state); }
+        unsafe {
+            parser.set_variables_handler_raw(callback, state);
+        }
         parser
             .add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY)
             .unwrap();
