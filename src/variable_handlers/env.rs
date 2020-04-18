@@ -22,14 +22,12 @@ impl EnvVariableHandler {
             };
 
             if var.starts_with(&prefix) {
-                if let Ok(value) = std::env::var(var) {
-                    let bytes = value.as_bytes();
-                    let size = bytes.len();
+                if let Ok(mut value) = std::env::var(var) {
+                    let bytes = unsafe { value.as_bytes_mut() };
                     unsafe {
-                        *need_free = true;
-                        *replace = libc::malloc(size).cast();
-                        *replace_len = size;
-                        bytes.as_ptr().copy_to_nonoverlapping(*replace, size);
+                        *need_free = false;
+                        *replace = bytes.as_mut_ptr();
+                        *replace_len = bytes.len();
                     }
                     return true;
                 }
