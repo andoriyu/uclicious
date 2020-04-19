@@ -392,7 +392,7 @@ mod test {
         assert_eq!(true, boolean);
 
         let float64: f64 = FromObject::try_from(root.lookup("f64").unwrap()).unwrap();
-        assert_eq!(3.14, float64);
+        assert_eq!(3.14f64, float64);
 
         let int64: i64 = FromObject::try_from(root.lookup("i64").unwrap()).unwrap();
         assert_eq!(1, int64);

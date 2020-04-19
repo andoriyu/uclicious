@@ -1,3 +1,4 @@
+//! A variable handler that lets you join multiple handlers into one.
 use crate::traits::{unpack_closure, VariableHandler};
 use libucl_bind::ucl_variable_handler;
 use std::cell::RefCell;
@@ -5,6 +6,7 @@ use std::ffi::c_void;
 use std::os::raw::c_uchar;
 use std::rc::Rc;
 
+/// A variable handler that delegates handling to other handlers. Internally, it's backed a `Vec` of handlers that are checked in order they were registered one by one until first positive match.
 pub struct CompoundHandler {
     handlers: Rc<RefCell<Vec<Box<dyn VariableHandler>>>>,
     closure:
@@ -41,6 +43,7 @@ impl Default for CompoundHandler {
 }
 
 impl CompoundHandler {
+    /// Add a handler to internal list of handlers.
     pub fn register_handler(&mut self, handler: Box<dyn VariableHandler>) -> &mut Self {
         {
             let mut handlers = self.handlers.borrow_mut();

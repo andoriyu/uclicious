@@ -1,9 +1,9 @@
-//! Clone of TryFrom from std. A hack around std's blanket implementations.
+//! Various traits that help you reduce boilerplate while using uclicious.
 use crate::ObjectError;
 use libucl_bind::ucl_variable_handler;
 use std::os::raw::{c_uchar, c_void};
 
-/// Implement this trait on your types in order for automatic derive to work.
+/// Implement this trait on your types in order for automatic derive to work. This is a copy of `TryFrom`.
 pub trait FromObject<T>: Sized {
     /// Performs the conversion.
     fn try_from(value: T) -> Result<Self, ObjectError>;
@@ -22,6 +22,7 @@ where
     }
 }
 
+/// A safe-ish interface that can be used as var handler. It's not implemented for a lot of things right now.
 pub trait VariableHandler {
     fn handle(
         &mut self,
@@ -34,7 +35,7 @@ pub trait VariableHandler {
     fn get_fn_ptr_and_data(&mut self) -> (*mut c_void, ucl_variable_handler);
 }
 
-/// Unpack closure into a data (context) and function pointer.
+/// Unpack closure into a data (context) and function pointer. Copy pasted from FFI guide and adopted for this specific use case.
 ///
 /// # Safety
 ///

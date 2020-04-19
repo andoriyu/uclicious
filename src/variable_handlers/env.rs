@@ -1,15 +1,19 @@
+//! A variable handler that lets you pull values from the environment.
 use crate::traits::{unpack_closure, VariableHandler};
 use libucl_bind::ucl_variable_handler;
 use std::ffi::c_void;
 use std::os::raw::c_uchar;
 use std::ptr::slice_from_raw_parts;
 
+/// A handler that replaces variable with value of environmental variable if its present.
+/// Handler optionally allows you to specify a prefix for all variables.
 pub struct EnvVariableHandler {
     closure:
         Box<dyn FnMut(*const c_uchar, usize, *mut *mut c_uchar, *mut usize, *mut bool) -> bool>,
 }
 
 impl EnvVariableHandler {
+    /// Create a handler with prefix.
     fn with_prefix(prefix: String) -> Self {
         let closure = move |data: *const ::std::os::raw::c_uchar,
                             len: usize,
@@ -40,8 +44,9 @@ impl EnvVariableHandler {
     }
 }
 impl Default for EnvVariableHandler {
+    /// Create a handler with `ENV_` prefix.
     fn default() -> Self {
-        Self::with_prefix(String::from("ENV_"))
+        Self::with_prefix(String::from(""))
     }
 }
 
@@ -71,7 +76,7 @@ mod test {
     #[cfg(target_os = "freebsd")]
     #[test]
     fn basic_env_var_handler() {
-        let mut handler = EnvVariableHandler::default();
+        let mut handler = EnvVariableHandler::with_prefix("ENV_".to_string());
         let (state, callback) = handler.get_fn_ptr_and_data();
 
         let good_var = "ENV_RZZYIBBEBD";
