@@ -28,6 +28,7 @@ use std::os::unix::io::AsRawFd;
 use super::{utils, ParserFlags, DEFAULT_PARSER_FLAG};
 use crate::error;
 use crate::raw::object::Object;
+use crate::traits::VariableHandler;
 use std::fmt;
 use std::path::Path;
 
@@ -35,6 +36,7 @@ use std::path::Path;
 pub struct Parser {
     parser: *mut ucl_parser,
     flags: ParserFlags,
+    var_handler: Option<Box<dyn VariableHandler>>,
 }
 
 impl Default for Parser {
@@ -56,6 +58,7 @@ impl Parser {
         Parser {
             parser: unsafe { ucl_parser_new(flags.0 as i32) },
             flags,
+            var_handler: None,
         }
     }
 
@@ -193,7 +196,7 @@ impl Parser {
         self
     }
 
-    /// Register function as an unknown variable handler.
+    /// Register function as an unknown variable handler. Parser can only have one handler.
     ///
     /// - *handler* - a function pointer
     /// - *ud* - an opaque pointer that will be passed to a handler
@@ -207,6 +210,21 @@ impl Parser {
         ud: *mut std::ffi::c_void,
     ) -> &mut Self {
         ucl_parser_set_variables_handler(self.parser, handler, ud);
+        self
+    }
+
+    /// A safe counterpart of [`Parser::set_variable_handler_raw`](#method.set_variables_handler_raw). Unlike unsafe version this one takes ownership of a handler and ensures it stays alive as long as parser does.
+    ///
+    /// ### Caveats
+    ///
+    /// Parser can have only bar handler. In order to have multiple, please use [`CompoundHandler`](../../variable_handlers/compound/struct.CompoundHandler.html) to join multiple handlers into one.
+    pub fn set_variables_handler(&mut self, handler: Box<dyn VariableHandler>) -> &mut Self {
+        let mut handler = handler;
+        let (state, callback) = handler.get_fn_ptr_and_data();
+        self.var_handler = Some(handler);
+        unsafe {
+            self.set_variables_handler_raw(callback, state);
+        }
         self
     }
 }
@@ -336,6 +354,54 @@ mod test {
         unsafe {
             parser.set_variables_handler_raw(callback, state);
         }
+        parser
+            .add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY)
+            .unwrap();
+
+        let root = parser.get_object().unwrap();
+
+        let looked_up_object = root.lookup("key").unwrap();
+        dbg!(&looked_up_object);
+
+        let object = looked_up_object.as_string().unwrap();
+        assert_eq!("asd", object.as_str());
+    }
+
+    #[test]
+    fn var_handler_safe() {
+        let basic = |data: *const ::std::os::raw::c_uchar,
+                     len: usize,
+                     replace: *mut *mut ::std::os::raw::c_uchar,
+                     replace_len: *mut usize,
+                     need_free: *mut bool| {
+            let var = unsafe {
+                let slice = slice_from_raw_parts(data, len).as_ref().unwrap();
+                std::str::from_utf8(slice).unwrap()
+            };
+            unsafe {
+                *need_free = false;
+            }
+            if var.eq("WWW") {
+                let test = "asd";
+                let size = test.as_bytes().len();
+                unsafe {
+                    *replace = libc::malloc(size).cast();
+                    *replace_len = size;
+                    test.as_bytes()
+                        .as_ptr()
+                        .copy_to_nonoverlapping(*replace, size);
+                    *need_free = true;
+                }
+                true
+            } else {
+                false
+            }
+        };
+        let input = r#"
+        key = "${WWW}"
+        "#;
+        let mut parser = Parser::default();
+        parser.set_variables_handler(Box::new(basic));
         parser
             .add_chunk_full(input, Priority::default(), DEFAULT_DUPLICATE_STRATEGY)
             .unwrap();
