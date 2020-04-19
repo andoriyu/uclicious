@@ -319,7 +319,7 @@
 //!  - Better tests
 //!  - Glob support in derive parser section
 //!  - Variable handler
-//!  
+//!
 //!
 //! ## Goals
 //!  - Provider safe and convient configuration library
