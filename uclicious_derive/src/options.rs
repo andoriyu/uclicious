@@ -171,6 +171,9 @@ pub struct Options {
 
     #[darling(default, multiple, rename = "var")]
     vars: Vec<Variable>,
+
+    #[darling(default)]
+    pre_source_hook: Option<Path>,
 }
 
 /// Data extracted from the fields of the input struct.
@@ -372,6 +375,7 @@ impl Options {
             includes: self.include.clone(),
             parser: &self.parser,
             vars: self.vars.clone(),
+            pre_source_hook: self.pre_source_hook.clone(),
         }
     }
     pub fn as_build_method(&self) -> BuildMethod {

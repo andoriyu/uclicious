@@ -36,6 +36,8 @@ impl ToTokens for ParserMethods {
         let result = bindings::result_ty();
         let err = bindings::ucl_parser_error();
         let path = bindings::path_ty();
+        let box_ty = bindings::box_ty();
+        let var_handler_trait = bindings::var_handler_trait();
         tokens.append_all(quote! (
         /// Add a chunk of text to the parser. String must:
         /// - not have `\0` character;
@@ -58,6 +60,15 @@ impl ToTokens for ParserMethods {
             value: V,
         ) -> &mut Self {
             self.__parser.register_variable(var, value);
+            self
+        }
+        /// A safe counterpart of [`Parser::set_variable_handler_raw`](#method.set_variables_handler_raw). Unlike unsafe version this one takes ownership of a handler and ensures it stays alive as long as parser does.
+        ///
+        /// ### Caveats
+        ///
+        /// Parser can have only bar handler. In order to have multiple, please use [`CompoundHandler`](../../variable_handlers/compound/struct.CompoundHandler.html) to join multiple handlers into one.
+        #vis fn set_variables_handler(&mut self, handler: #box_ty<dyn #var_handler_trait>) -> &mut Self {
+            self.__parser.set_variables_handler(handler);
             self
         }
         /// Add the standard file variables to the `parser` based on the `filename` specified:

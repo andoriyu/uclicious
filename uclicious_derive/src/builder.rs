@@ -27,6 +27,7 @@ pub struct Builder<'a> {
     pub includes: Vec<Include>,
     pub parser: &'a Parser,
     pub vars: Vec<Variable>,
+    pub pre_source_hook: Option<Path>,
 }
 
 impl<'a> Builder<'a> {
@@ -198,6 +199,13 @@ impl<'a> ToTokens for Builder<'a> {
         let result_ty = bindings::result_ty();
         let ucl_error_ty = bindings::ucl_parser_error();
         let parser = self.parser;
+        let pre_source_hook = if let Some(ref hook) = self.pre_source_hook {
+            quote! {
+                #hook(&mut parser)?;
+            }
+        } else {
+            quote!()
+        };
         tokens.append_all(quote!(
                 #[derive(#derived_traits)]
                 #builder_doc_comment
@@ -212,6 +220,7 @@ impl<'a> ToTokens for Builder<'a> {
                     #builder_vis fn new() -> #result_ty<Self #ty_generics #where_clause, #ucl_error_ty> {
                         #parser
                         #(#vars)*
+                        #pre_source_hook
                         #(#includes)*
                         Ok(
                             Self {

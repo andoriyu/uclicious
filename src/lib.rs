@@ -256,6 +256,10 @@
 //!                     - a string representation of filepath.
 //!                 - `expand`
 //!                     - (optional) if set, then variables would be expanded to absolute.
+//!  - `pre_source_hook(...)`
+//!     - Optional attribute to run a function before sources are added
+//!     - Can be used to register vars handler
+//!     - Must take `&mut Parser` as argument and return `Result<(), Into<UclError>>`
 //!  - `var(..)`
 //!     - Optional attribute to register string variables with the parser.
 //!     - Has following nested attributes:
