@@ -37,7 +37,13 @@ pub fn clone_trait() -> Path {
 pub fn into_trait() -> Path {
     syn::parse_str("::std::convert::Into").unwrap()
 }
+pub fn box_ty() -> Path {
+    syn::parse_str("::std::boxed::Box").unwrap()
+}
 
+pub fn var_handler_trait() -> Path {
+    syn::parse_str("::uclicious::traits::VariableHandler").unwrap()
+}
 /// TryInto trait.
 pub fn try_into_trait() -> Path {
     syn::parse_str("::std::convert::TryInto").unwrap()
