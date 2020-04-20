@@ -1,3 +1,4 @@
+---
 on: push
 name: Quick Checks
 jobs:
@@ -9,10 +10,10 @@ jobs:
       - name: Install stable
         uses: actions-rs/toolchain@v1
         with:
-            profile: minimal
-            toolchain: stable
-            override: true
-            components: clippy
+          profile: minimal
+          toolchain: stable
+          override: true
+          components: clippy
       - uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -25,9 +26,9 @@ jobs:
       - name: Install latest nightly
         uses: actions-rs/toolchain@v1
         with:
-            profile: minimal
-            toolchain: stable
-            override: true
+          profile: minimal
+          toolchain: stable
+          override: true
       - name: Run cargo check
         uses: actions-rs/cargo@v1
         with:
@@ -40,12 +41,24 @@ jobs:
       - name: Install latest nightly
         uses: actions-rs/toolchain@v1
         with:
-            profile: minimal
-            toolchain: stable
-            override: true
-            components: rustfmt
+          profile: minimal
+          toolchain: stable
+          override: true
+          components: rustfmt
       - name: Run cargo check
         uses: actions-rs/cargo@v1
         with:
           command: fmt
           args: --all -- --check
+  vale:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+      - name: Vale
+        uses: errata-ai/vale-action@v1.0.4
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        with:
+          styles: |
+            https://github.com/errata-ai/Microsoft/releases/latest/download/Microsoft.zip https://github.com/errata-ai/write-good/releases/latest/download/write-good.zip
