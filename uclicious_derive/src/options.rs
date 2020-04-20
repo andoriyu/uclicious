@@ -64,7 +64,12 @@ impl ToTokens for Parser {
 }
 #[derive(Debug, Clone, FromMeta)]
 pub struct Include {
-    path: String,
+    #[darling(default)]
+    path: Option<String>,
+    #[darling(default)]
+    chunk: Option<String>,
+    #[darling(default)]
+    chunk_static: Option<String>,
     #[darling(default)]
     priority: Option<u32>,
     #[darling(default)]
@@ -73,16 +78,31 @@ pub struct Include {
 
 impl ToTokens for Include {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        let path = &self.path;
         let priority = self.priority.unwrap_or(0);
         let strategy = match self.strategy {
             Some(ref s) => s.clone(),
             None => bindings::ucl_default_strategy(),
         };
         let into_trait = bindings::into_trait();
-        tokens.append_all(quote!(
-            parser.add_file_full(#path, #into_trait::into(#priority), #strategy)?;
-        ));
+
+        match (&self.path, &self.chunk, &self.chunk_static) {
+            (Some(path), None, None) => {
+                tokens.append_all(quote!(
+                    parser.add_file_full(#path, #into_trait::into(#priority), #strategy)?;
+                ));
+            }
+            (None, Some(chunk), None) => {
+                tokens.append_all(quote!(
+                    parser.add_chunk_full(#chunk, #into_trait::into(#priority), #strategy)?;
+                ));
+            }
+            (None, None, Some(path)) => {
+                tokens.append_all(quote!(
+                    parser.add_chunk_full(include_str!(#path), #into_trait::into(#priority), #strategy)?;
+                ));
+            }
+            (_, _, _) => panic!("Unsupported include combination!"),
+        }
     }
 }
 

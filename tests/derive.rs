@@ -86,3 +86,24 @@ fn derive_with_hook() {
     assert_eq!("dsa", test.key_one);
     assert_eq!("asd", test.key_two);
 }
+
+#[test]
+fn include_chunk() {
+    #[derive(Uclicious, Debug)]
+    #[ucl(include(chunk = r#"key_one = "asd""#))]
+    struct Test {
+        key_one: String,
+    }
+    let test = Test::builder().unwrap().build().unwrap();
+    assert_eq!("asd", test.key_one);
+}
+#[test]
+fn include_chunk_with_macro() {
+    #[derive(Uclicious, Debug)]
+    #[ucl(include(chunk_static = "fixtures/key_one.ucl"))]
+    struct Test {
+        key_one: String,
+    }
+    let test = Test::builder().unwrap().build().unwrap();
+    assert_eq!("asd", test.key_one);
+}

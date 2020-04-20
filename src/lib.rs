@@ -1,10 +1,32 @@
 //! # Uclicious [![Build Status](https://dev.azure.com/andoriyu/personal/_apis/build/status/andoriyu.uclicious?branchName=master)](https://dev.azure.com/andoriyu/personal/_build/latest?definitionId=7&branchName=master) [![codecov](https://codecov.io/gh/andoriyu/uclicious/branch/master/graph/badge.svg)](https://codecov.io/gh/andoriyu/uclicious) [![docs.rs](https://docs.rs/uclicious/badge.svg)](https://docs.rs/uclicious) [![Crates.io](https://img.shields.io/crates/v/uclicious.svg)](https://crates.io/crates/uclicious)
 //!
-//! #### Uclicious is a wrapper around Universal Configuration Library (UCL) parser with a lot of sugar.
+//!   * [What is Uclicious](#what-is-uclicious)
+//!   * [Usage](#usage)
+//!     + [Raw API](#raw-api)
+//!     + [Derive-driven](#derive-driven)
+//!       - [Validators](#validators)
+//!       - [Type Mapping](#type-mapping)
+//!     + [Supported attributes (`#[ucl(..)]`)](#supported-attributes-%23ucl)
+//!       - [Structure level](#structure-level)
+//!       - [Field level](#field-level)
+//!     + [Additional notes](#additional-notes)
+//!   * [Contributing](#contributing)
+//!       - [Particular Contributions of Interest](#particular-contributions-of-interest)
+//!   * [Goals](#goals)
+//!     + [Not Goals](#not-goals)
+//!   * [Special thanks](#special-thanks)
+//!   * [LICENSE](#license)
+//! ## What is Uclicious
 //!
-//! Uclicious is built on top of [libucl](https://github.com/vstakhov/libucl).
-//! It is much more complex than json or TOML, so I recommend reading documentaiton about it.
-//! Library provides safe, but raw API to that library:
+//! Uclicious is a flexible reduced boilerplate configuration framework.
+//!
+//! Uclicious is built on top of [libucl](https://github.com/vstakhov/libucl). If you ever wrote an nginx configurtion and though "Damn, I wish all configuration files were like this" this is the library for you. Internal parser supports both: nginx-like and json-like formats. JSON parser is a little bit more permissive than - every json file is a valid UCL file, but not other way around.
+//! It is much more complex than json or TOML, so I recommend reading documentaiton about it. Author of UCL did a great job documenting it. This library provides both: derive-driven and raw-api driven usage patterns.
+//!
+//! ## Usage
+//! ### Raw API
+//!
+//! Raw API involves interacting with `libucl` parser via safe api:
 //! ```rust
 //! use uclicious::*;
 //! let mut parser = Parser::default();
@@ -55,7 +77,7 @@
 //! let maybe: Option<bool> = FromObject::try_from(lookup_result).unwrap();
 //! assert_eq!(Some(true), maybe);
 //! ```
-//! ### Automatic Derive
+//! ### Derive-driven
 //!
 //! On top of "raw" interface to libUCL, Uclicious provides an easy way to derive constructor for strucs:
 //! ```rust
@@ -271,9 +293,14 @@
 //!  - `include(..)`
 //!     - Used to add files into the parser.
 //!     - If file doesn't exist or failed to parse, then error will be returned in a constructor.
+//!     - Must specify exactly one of following sources: `path`, `chunk` or `chunk_static`
 //!     - Has following nested attirbutes:
-//!         - (required) `path = string`
+//!         - (semi-optional) `path = string`
 //!             - File path. Can be absolute or relative to CWD.
+//!         - (semi-optional) `chunk = string`
+//!             - A string that will be added to parser as a chunk.
+//!         - (semi-optional) `chunk_static = string`
+//!             - A path to a file that will be included into binary with [`include_str!()`](https://doc.rust-lang.org/std/macro.include_str.html)
 //!         - (optional) `priority = u32`
 //!             - 0-15 priority for the source. Consult the libUCL documentation for more information.
 //!         - (optional) `strategy = uclicious::DuplicateStrategy`
