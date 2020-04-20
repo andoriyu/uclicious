@@ -20,7 +20,7 @@
 //!
 //! Uclicious is a flexible reduced boilerplate configuration framework.
 //!
-//! Uclicious is built on top of [libucl](https://github.com/vstakhov/libucl). If you ever wrote an nginx configurtion and though "Damn, I wish all configuration files were like this" this is the library for you. Internal parser supports both: nginx-like and json-like formats. JSON parser is a little bit more permissive than - every json file is a valid UCL file, but not other way around.
+//! Uclicious is built on top of [libucl](https://github.com/vstakhov/libucl). If you ever wrote an nginx configurtion and though "Damn, I wish all configuration files were like this" this is the library for you. Internal parser supports both: nginx-like and json-like formats. [JSON parser is a little bit more permissive than "proper" json parser](https://github.com/vstakhov/libucl#improvements-to-the-json-notation) - every json file is a valid UCL file, but not other way around.
 //! It is much more complex than json or TOML, so I recommend reading documentaiton about it. Author of UCL did a great job documenting it. This library provides both: derive-driven and raw-api driven usage patterns.
 //!
 //! ## Usage
