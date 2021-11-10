@@ -7,14 +7,6 @@ All notable changes to this project will be documented in this file.
 
 - **derive**: Add FromStr shortcut (#22)
 
-### Miscellaneous Tasks
-- Add Vale as another action
-
-
-### Chose
-
-- **changelog**: Update for 0.1.5
-
 ## [0.1.5] - 2020-04-20
 
 ### Bug Fixes
