@@ -1,73 +1,132 @@
-## [0.1.5](https://github.com/andoriyu/uclicious/compare/v0.1.4...v0.1.5) (2020-04-20)
+# Changelog
+All notable changes to this project will be documented in this file.
 
+## [0.1.6] - 2021-11-10
+
+### Features
+
+- **derive**: Add FromStr shortcut (#22)
+
+### Miscellaneous Tasks
+- Add Vale as another action
+
+
+### Chose
+
+- **changelog**: Update for 0.1.5
+
+## [0.1.5] - 2020-04-20
 
 ### Bug Fixes
 
-* **sys:** Update to latest snapshot of libucl ([01c8451](https://github.com/andoriyu/uclicious/commit/01c8451))
+- **sys**: Update to latest snapshot of libucl
+
+### Documentation
+
+- **vh**: Document unpack_closure- Missed a few words
 
 
 ### Features
 
-* **derive:** Ability to add chunks ([79631ad](https://github.com/andoriyu/uclicious/commit/79631ad))
-* **derive:** Ability to add pre_sync_hook ([958d82a](https://github.com/andoriyu/uclicious/commit/958d82a))
-* **parser:** Introduce VaribleHandler trait ([6c7f4e0](https://github.com/andoriyu/uclicious/commit/6c7f4e0))
-* **vh:** Add simple and safe iterface to parser ([0406473](https://github.com/andoriyu/uclicious/commit/0406473))
-* **vh:** Make variables handlers into features ([139a9de](https://github.com/andoriyu/uclicious/commit/139a9de))
-* **vh/compound:** Introduce Compound VarHandler ([73f7229](https://github.com/andoriyu/uclicious/commit/73f7229))
-* **vh/env:** Introduce EnvVar variable handler ([a13f0fa](https://github.com/andoriyu/uclicious/commit/a13f0fa))
+- **derive**: Ability to add pre_sync_hook
+- **derive**: Ability to add chunks
+- **parser**: Introduce VaribleHandler trait
+- **vh**: Make variables handlers into features
+- **vh**: Add simple and safe iterface to parser
+- **vh/compound**: Introduce Compound VarHandler
+- **vh/env**: Introduce EnvVar variable handler
+
+### Miscellaneous Tasks
+
+- **changelog**: Update for 0.1.4
+- **parser**: Remove unused imports
+- **readme**: Sync readme- Change how libc version defined
+- Cleanup parser test code
+- Sync libucl with upstream
+- Release derive crate
 
 
+### Refactor
 
-## [0.1.4](https://github.com/andoriyu/uclicious/compare/v0.1.3...v0.1.4) (2020-04-05)
+- **vh**: Remove unnecessary copy in handlers
+- **vh**: Don't try to pass unsafe function as safe- Apply clippy suggestions to Priority
+- Apply clippy suggestions
 
+
+### Styling
+
+- **derive**: Clippy suggestions- Run cargo fmt
+- Run cargofmt
+- Remove whitespace in src/lib.rs docs
+
+
+### Testing
+
+- **vh**: Workaround for Azure?
+- **vh**: Don't run env test on ci for now
+
+### Ci
+
+- **github**: Setup github actions (#16)- Automate release notes creation
+
+
+## [0.1.4] - 2020-04-05
 
 ### Bug Fixes
 
-* **iter:** iterators for implicit arrays ([#12](https://github.com/andoriyu/uclicious/issues/12)) ([af2a5cc](https://github.com/andoriyu/uclicious/commit/af2a5cc))
-* **priority:** Priority incorrectly capped at 15 ([#15](https://github.com/andoriyu/uclicious/issues/15)) ([5ce2514](https://github.com/andoriyu/uclicious/commit/5ce2514))
+- **iter**: Iterators for implicit arrays (#12)
+- **priority**: Priority incorrectly capped at 15 (#15)
+
+### Documentation
+- Fix a typo
+- Fix typos
 
 
 ### Features
 
-* **object:** Ability to clone and deepclone objects ([38de0fc](https://github.com/andoriyu/uclicious/commit/38de0fc))
-* **object:** Implement Ord ([#14](https://github.com/andoriyu/uclicious/issues/14)) ([1fd4f73](https://github.com/andoriyu/uclicious/commit/1fd4f73))
-* **object:** Implement PartialEq ([#10](https://github.com/andoriyu/uclicious/issues/10)) ([5b7b78b](https://github.com/andoriyu/uclicious/commit/5b7b78b))
-* Derive mandatory traits for Priority ([9770705](https://github.com/andoriyu/uclicious/commit/9770705))
+- **object**: Implement PartialEq (#10)
+- **object**: Ability to clone and deepclone objects
+- **object**: Implement Ord (#14)- Derive mandatory traits for Priority
 
 
+### Miscellaneous Tasks
+- Cleanup iterators code
 
-## [0.1.3](https://github.com/andoriyu/uclicious/compare/0.1.2...v0.1.3) (2020-04-04)
 
+### Styling
+- Run cargo fmt
+
+
+### Testing
+
+- **parser**: Add at least one error state test (#13)- Add unit tests for Priority
+- Test unhappy paths in utils
+
+
+### Ci
+- Ignore some paths when coverage is calculated
+- Add token for codecov and setup notificaitons
+- Fix codecov token
+
+
+## [0.1.3] - 2020-04-04
 
 ### Bug Fixes
 
-* **derive:** automatically convert TryFrom errors ([c3273e5](https://github.com/andoriyu/uclicious/commit/c3273e5))
-
-
-### Features
-
-* **derive:** Map conversion helper ([51056a6](https://github.com/andoriyu/uclicious/commit/51056a6))
-
-
-
-## [0.1.2](https://github.com/andoriyu/uclicious/compare/0.1.1...0.1.2) (2020-03-22)
-
+- **derive**: Automatically convert TryFrom errors
 
 ### Features
 
-* Ability to "wrap" other errors inside ObjectError. ([7e4db2c](https://github.com/andoriyu/uclicious/commit/7e4db2c))
-* Add TryInto trait for simplicity of conversion. ([5f1cff2](https://github.com/andoriyu/uclicious/commit/5f1cff2))
+- **derive**: Fields mappers and validators
+- **derive**: Map conversion helper- Parse time object into f64 and Duration
+- Ability to register variables on a builder.
+- Ability to call set_filevars on a builder.
+- Add TryInto trait for simplicity of conversion.
+- Ability to "wrap" other errors inside ObjectError.
 
 
-
-## [0.1.1](https://github.com/andoriyu/uclicious/compare/40f6bd4...0.1.1) (2020-03-16)
-
-
-### Features
-
-* Ability to call set_filevars on a builder. ([7e8724f](https://github.com/andoriyu/uclicious/commit/7e8724f))
-* Ability to register variables on a builder. ([a2f3ede](https://github.com/andoriyu/uclicious/commit/a2f3ede))
-* parse time object into f64 and Duration ([40f6bd4](https://github.com/andoriyu/uclicious/commit/40f6bd4))
+### Miscellaneous Tasks
+- Remove unused code
 
 
-
+<!-- generated by git-cliff -->
