@@ -56,7 +56,13 @@ impl<'a> Initializer<'a> {
         }
     }
     fn match_some(&'a self) -> MatchSome {
-        match (&self.validation, &self.from, &self.try_from, &self.map, &self.from_str) {
+        match (
+            &self.validation,
+            &self.from,
+            &self.try_from,
+            &self.map,
+            &self.from_str,
+        ) {
             (None, None, None, None, false) => MatchSome::Simple,
             (Some(validation), None, None, None, false) => MatchSome::Validation(validation),
             (None, Some(src_type), None, None, false) => MatchSome::From(src_type),
@@ -70,7 +76,7 @@ impl<'a> Initializer<'a> {
             (None, None, None, Some(map_func), false) => MatchSome::Map(map_func),
             (Some(validation), None, None, Some(map_func), false) => {
                 MatchSome::MapValidation(map_func, validation)
-            },
+            }
             (None, None, None, None, true) => MatchSome::FromStr,
             (Some(validation), None, None, None, true) => MatchSome::FromStrValidation(validation),
             _ => panic!(

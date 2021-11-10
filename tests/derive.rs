@@ -1,7 +1,7 @@
+use std::net::{Ipv4Addr, SocketAddrV4};
 use std::ptr::slice_from_raw_parts;
 use uclicious::Uclicious;
 use uclicious::{variable_handlers, Priority, UclError, DEFAULT_DUPLICATE_STRATEGY};
-use std::net::{Ipv4Addr, SocketAddrV4};
 
 #[test]
 fn derive_with_hook() {
