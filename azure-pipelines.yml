@@ -6,7 +6,7 @@ jobs:
 - job: run_tests
   displayName: Run Unit Tests
   pool:
-    vmImage: ubuntu-16.04
+    vmImage: ubuntu-20.04
   strategy:
     matrix:
       stable:
@@ -33,14 +33,13 @@ jobs:
         sudo ln -s /home/vsts/.cargo/bin/cargo-suity /usr/local/bin/
       displayName: Install suity
     - script: |
-        CARGO=$(which cargo)
-        RUSTFLAGS="-C link-dead-code" $CARGO test --no-run
+        RUSTFLAGS="-C link-dead-code" cargo test --no-run
         mkdir test-results
-        sudo RUSTFLAGS="-C link-dead-code" $CARGO suity
+        RUSTFLAGS="-C link-dead-code" cargo suity
       displayName: Run Tests
     - script: |
         cargo install cargo-tarpaulin -f
-        sudo RUSTFLAGS="-C link-dead-code" $(which cargo) tarpaulin --out Xml
+        RUSTFLAGS="-C link-dead-code" cargo tarpaulin --out Xml
         bash <(curl -s https://codecov.io/bash)
       displayName: Run Coverage
       condition: and(succeeded(),eq(variables['rustup_toolchain'], 'stable'))
