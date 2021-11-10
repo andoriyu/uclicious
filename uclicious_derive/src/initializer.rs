@@ -20,6 +20,7 @@ pub struct Initializer<'a> {
     pub from: Option<Path>,
     pub try_from: Option<Path>,
     pub map: Option<Path>,
+    pub from_str: bool,
 }
 
 impl<'a> ToTokens for Initializer<'a> {
@@ -55,21 +56,23 @@ impl<'a> Initializer<'a> {
         }
     }
     fn match_some(&'a self) -> MatchSome {
-        match (&self.validation, &self.from, &self.try_from, &self.map) {
-            (None, None, None, None) => MatchSome::Simple,
-            (Some(validation), None, None, None) => MatchSome::Validation(validation),
-            (None, Some(src_type), None, None) => MatchSome::From(src_type),
-            (None, None, Some(src_type), None) => MatchSome::TryFrom(src_type),
-            (Some(validation), Some(from), None, None) => {
+        match (&self.validation, &self.from, &self.try_from, &self.map, &self.from_str) {
+            (None, None, None, None, false) => MatchSome::Simple,
+            (Some(validation), None, None, None, false) => MatchSome::Validation(validation),
+            (None, Some(src_type), None, None, false) => MatchSome::From(src_type),
+            (None, None, Some(src_type), None, false) => MatchSome::TryFrom(src_type),
+            (Some(validation), Some(from), None, None, false) => {
                 MatchSome::FromValidation(from, validation)
             }
-            (Some(validation), None, Some(from), None) => {
+            (Some(validation), None, Some(from), None, false) => {
                 MatchSome::TryFromValidation(from, validation)
             }
-            (None, None, None, Some(map_func)) => MatchSome::Map(map_func),
-            (Some(validation), None, None, Some(map_func)) => {
+            (None, None, None, Some(map_func), false) => MatchSome::Map(map_func),
+            (Some(validation), None, None, Some(map_func), false) => {
                 MatchSome::MapValidation(map_func, validation)
-            }
+            },
+            (None, None, None, None, true) => MatchSome::FromStr,
+            (Some(validation), None, None, None, true) => MatchSome::FromStrValidation(validation),
             _ => panic!(
                 "field {}: map, from and try_from are mutually exclusive",
                 self.field_ident
@@ -99,6 +102,8 @@ enum MatchSome<'a> {
     TryFromValidation(&'a Path, &'a Path),
     Map(&'a Path),
     MapValidation(&'a Path, &'a Path),
+    FromStr,
+    FromStrValidation(&'a Path),
 }
 
 impl<'a> ToTokens for MatchNone<'a> {
@@ -127,6 +132,8 @@ impl<'a> ToTokens for MatchSome<'a> {
         let into_trait = bindings::into_trait();
         let try_into_trait = bindings::try_into_trait();
         let object_error_ty = bindings::ucl_object_error();
+        let string_ty = bindings::string_ty();
+        let from_str_trait = bindings::from_str_trait();
         let quote = match self {
             MatchSome::Simple => quote!(#from_object::try_from(obj)?),
             MatchSome::Validation(path) => quote!(
@@ -158,6 +165,17 @@ impl<'a> ToTokens for MatchSome<'a> {
             ),
             MatchSome::MapValidation(map_func, validation) => quote!(
                 let v = #map_func(obj)?;
+                #validation(&lookup_path, &v).map(|_| v)?
+            ),
+            MatchSome::FromStr => quote!(
+                let v: #string_ty = #from_object::try_from(obj)?;
+                #from_str_trait::from_str(&v)
+                        .map_err(|e| #object_error_ty::other(e))?
+            ),
+            MatchSome::FromStrValidation(validation) => quote!(
+                let v: #string_ty = #from_object::try_from(obj)?;
+                let v = #from_str_trait::from_str(&v)
+                        .map_err(|e| #object_error_ty::other(e))?;
                 #validation(&lookup_path, &v).map(|_| v)?
             ),
         };

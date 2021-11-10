@@ -1,6 +1,7 @@
 use std::ptr::slice_from_raw_parts;
 use uclicious::Uclicious;
 use uclicious::{variable_handlers, Priority, UclError, DEFAULT_DUPLICATE_STRATEGY};
+use std::net::{Ipv4Addr, SocketAddrV4};
 
 #[test]
 fn derive_with_hook() {
@@ -97,6 +98,22 @@ fn include_chunk() {
     let test = Test::builder().unwrap().build().unwrap();
     assert_eq!("asd", test.key_one);
 }
+
+#[test]
+fn from_str() {
+    #[derive(Uclicious, Debug)]
+    #[ucl(include(chunk = r#"key_one = "0.0.0.0:8080""#))]
+    struct Test {
+        #[ucl(from_str)]
+        key_one: SocketAddrV4,
+    }
+
+    let socket = SocketAddrV4::new(Ipv4Addr::new(0, 0, 0, 0), 8080);
+
+    let test = Test::builder().unwrap().build().unwrap();
+    assert_eq!(socket, test.key_one);
+}
+
 #[test]
 fn include_chunk_with_macro() {
     #[derive(Uclicious, Debug)]

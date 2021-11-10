@@ -220,6 +220,8 @@ pub struct Field {
     try_from: Option<Path>,
     #[darling(default)]
     map: Option<Path>,
+    #[darling(default)]
+    from_str: bool,
 }
 impl FlagVisibility for Field {
     fn public(&self) -> &Flag {
@@ -481,6 +483,7 @@ impl<'a> FieldWithDefaults<'a> {
             from: self.field.from.clone(),
             try_from: self.field.try_from.clone(),
             map: self.field.map.clone(),
+            from_str: self.field.from_str,
         }
     }
 }

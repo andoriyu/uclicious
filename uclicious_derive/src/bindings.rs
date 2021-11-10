@@ -54,6 +54,10 @@ pub fn from_object_trait() -> Path {
     syn::parse_str("::uclicious::FromObject").unwrap()
 }
 
+pub fn from_str_trait() -> Path {
+    syn::parse_str("::std::str::FromStr").unwrap()
+}
+
 /// Boxed error type
 pub fn boxed_error() -> Type {
     syn::parse_str("::std::boxed::Box<dyn ::std::error::Error>").unwrap()
