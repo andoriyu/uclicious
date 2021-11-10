@@ -1,6 +1,6 @@
 [package]
 name = "uclicious"
-version = "0.1.6-alpha.0"
+version = "0.1.6"
 authors = ["Andrey Cherkashin <andoriyu@gmail.com>"]
 edition = "2018"
 categories = ["config"]
