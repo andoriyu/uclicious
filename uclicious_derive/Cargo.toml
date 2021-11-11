@@ -1,6 +1,6 @@
 [package]
 name = "uclicious_derive"
-version = "0.1.5"
+version = "0.1.7"
 authors = ["Andrey Cherkashin <andoriyu@gmail.com>"]
 edition = "2018"
 license = "BSD-2-Clause"
