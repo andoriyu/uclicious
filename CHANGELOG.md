@@ -1,11 +1,33 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.1.7] - 2021-11-11
+
+### Bug Fixes
+- Forgot to release _derive crate last time
+
+
+### Documentation
+- Update readme for try_from
+
+
+### Miscellaneous Tasks
+- Update changelog for 0.1.6
+
+
 ## [0.1.6] - 2021-11-10
 
 ### Features
 
 - **derive**: Add FromStr shortcut (#22)
+
+### Miscellaneous Tasks
+- Add Vale as another action
+
+
+### Chose
+
+- **changelog**: Update for 0.1.5
 
 ## [0.1.5] - 2020-04-20
 
