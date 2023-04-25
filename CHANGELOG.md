@@ -1,6 +1,20 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.1.8] - 2023-04-25
+
+### Documentation
+- Add changelog
+
+
+### Miscellaneous Tasks
+- Update nix flake shell
+
+
+### Deps
+- Update libucl vendored to 0.8.2
+
+
 ## [0.1.7] - 2021-11-11
 
 ### Bug Fixes
