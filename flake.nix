@@ -3,49 +3,78 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
-    rust-overlay = {
-      url = "github:oxalica/rust-overlay";
-      inputs = { nixpkgs.follows = "nixpkgs"; };
-    };
     andoriyu = {
       url = "github:andoriyu/flakes";
       inputs = {
         nixpkgs.follows = "nixpkgs";
-        rust-overlay.follows = "rust-overlay";
+        flake-utils.follows = "flake-utils";
+        fenix.follows = "fenix";
       };
     };
-    devshell.url = "github:numtide/devshell/master";
+    fenix = {
+      url = "github:nix-community/fenix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    crane = {
+      url = "github:ipetkov/crane";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    attic = {
+      url = "github:zhaofengli/attic";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
-  outputs =
-    { self, nixpkgs, rust-overlay, flake-utils, andoriyu, devshell, ... }:
-    flake-utils.lib.eachDefaultSystem (system:
-      let
-        cwd = builtins.toString ./.;
-        overlays = [ devshell.overlay rust-overlay.overlay andoriyu.overlay ];
-        pkgs = import nixpkgs { inherit system overlays; };
-        rust = pkgs.rust-bin.fromRustupToolchainFile "${cwd}/rust-toolchain.toml";
-      in with pkgs; {
-        devShell = clangStdenv.mkDerivation {
-        name = "rust";
-        nativeBuildInputs = [
-            clangStdenv
+  outputs = {
+    self,
+    nixpkgs,
+    fenix,
+    flake-utils,
+    andoriyu,
+    crane,
+    attic,
+    ...
+  }:
+    flake-utils.lib.eachDefaultSystem (system: let
+      cwd = builtins.toString ./.;
+      overlays = [ fenix.overlays.default ];
+      pkgs = import nixpkgs {inherit system overlays;};
+      control-plane = pkgs.callPackage ./nix/control-plane {inherit nixpkgs system crane fenix andoriyu;};
+    in
+      with pkgs; {
+        formatter = nixpkgs.legacyPackages.${system}.alejandra;
+        devShell = clangStdenv.mkDerivation rec {
+          name = "rust";
+          nativeBuildInputs = [
+            (with fenix.packages.${system};
+              combine [
+                (stable.withComponents [
+                  "cargo"
+                  "clippy"
+                  "rust-src"
+                  "rustc"
+                  "rustfmt"
+                ])
+              ])
+            andoriyu.packages.${system}.git-cliff
+            bacon
             binutils
-            gnumake
+            cargo-cache
+            cargo-deny
+            cargo-diet
+            cargo-nextest
+            cargo-outdated
+            cargo-sort
+            cargo-sweep
+            cargo-wipe
+            cargo-workspaces
             cmake
-            openssl
-            openssl.dev
-            pkgconfig
-            rust
-            rust-analyzer
-            cargo-expand-nightly
-            cargo-release
-            git-cliff
+            curl
+            gnumake
+            pkg-config
+            rust-analyzer-nightly
+            zlib
+  
           ];
-          RUST_SRC_PATH = "${rust}/lib/rustlib/src/rust/library";
-          OPENSSL_DIR = "${openssl.bin}/bin";
-          OPENSSL_LIB_DIR = "${openssl.out}/lib";
-          OPENSSL_INCLUDE_DIR = "${openssl.out.dev}/include";
         };
       });
 }
-
