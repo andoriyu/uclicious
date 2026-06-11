@@ -1,0 +1,19 @@
+[package]
+name = "uclicious_derive"
+version = "0.9.1"
+authors = ["Andrey Cherkashin <andoriyu@gmail.com>"]
+edition = "2018"
+license = "BSD-2-Clause"
+categories = ["config"]
+keywords = ["config", "uclicious", "derive"]
+description = "Procedural macro to derive FromObject trait from the uclicious crate."
+repository = "https://github.com/andoriyu/uclicious"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = "1.0.16"
+quote = "1.0.3"
+darling = "0.10.2"
+proc-macro2 = "1.0.9"

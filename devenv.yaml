@@ -1,0 +1,13 @@
+---
+inputs:
+  molds:
+    url: git+ssh://forgejo@git.coldsteel.casa/Coldsteel/molds.git
+  nixpkgs:
+    follows: molds/nixpkgs-unstable
+  nixpkgs-unstable:
+    follows: molds/nixpkgs-unstable
+  rust-overlay:
+    follows: molds/rust-overlay
+imports:
+  - molds/devenv/common
+  - molds/devenv/rust
