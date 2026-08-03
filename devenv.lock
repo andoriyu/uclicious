@@ -358,11 +358,11 @@
         "rust-overlay": "rust-overlay_2"
       },
       "locked": {
-        "lastModified": 1785120189,
-        "narHash": "sha256-OrVTTe0vhJQ2AwsOaCrkNP2kOtAyu2v1fDvtyfmDNIU=",
+        "lastModified": 1785434557,
+        "narHash": "sha256-zHKFeRy8EFbaBCo4Ht9tNtGVugZPuTJG6N59p+amjfo=",
         "ref": "refs/heads/main",
-        "rev": "d8113af46d3b76806653dae7ff4a136002f04c6e",
-        "revCount": 34,
+        "rev": "6a13201bba1423657af2e8f6535bb15362e1bdd3",
+        "revCount": 35,
         "type": "git",
         "url": "ssh://forgejo@git.coldsteel.casa/Coldsteel/molds.git"
       },
