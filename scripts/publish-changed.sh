@@ -270,6 +270,10 @@ process_workspace() {
         ' <<<"$meta")
         while IFS= read -r dep; do
             [[ -z "$dep" ]] && continue
+            # A crate may dev-depend on itself to switch a feature on for
+            # its tests; that is not an ordering edge, and as one it is a
+            # cycle nothing can break.
+            [[ "$dep" == "$n" ]] && continue
             if [[ -n "${version[$dep]+x}" ]]; then
                 adj[$dep]="${adj[$dep]} $n"
                 indeg[$n]=$((indeg[$n] + 1))
