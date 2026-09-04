@@ -16,6 +16,14 @@
 # publishable, and a missed or failed publish self-heals on the next run
 # instead of being lost.
 #
+# Publishing must be opted into explicitly, and only to this registry: every
+# crate whose manifest is not `publish = false` must say
+# `publish = ["coldsteel"]` exactly. An absent `publish` field — and the
+# equivalent `publish = true` — means "publishable to crates.io", so a
+# workspace root added to this job would carry every such crate onto the
+# registry by default. That is a hard error here, not a skip: see
+# `docs/agent_guide/publishing.md`.
+#
 # Requires on PATH: cargo (the workspace's own toolchain — run this inside
 # that workspace's devenv shell so `cargo publish`'s verify build has the
 # right native deps), curl, jq.
@@ -37,7 +45,8 @@
 #
 # Exit status: 0 if every configured workspace was processed without a
 # publish error; 1 on any hard failure (bad workspace, registry
-# unreachable, publish failed, dependency cycle among publishable crates).
+# unreachable, publish failed, dependency cycle among publishable crates,
+# a crate that is publishable without an explicit `publish = ["coldsteel"]`).
 
 set -euo pipefail
 
@@ -45,7 +54,7 @@ REGISTRY_NAME="coldsteel"
 INDEX_BASE="https://cargo.coldsteel.casa/api/v1/crates"
 
 usage() {
-    sed -n '2,33p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,40p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 publish=0
@@ -178,15 +187,49 @@ process_workspace() {
         exit 1
     fi
 
-    # Publishable crates: `publish` is absent (null — publishable anywhere)
-    # or an array that names this registry. `publish = false` comes back
-    # from cargo metadata as an empty array, which the index() check
-    # naturally excludes. Never a hand-maintained crate list — this reads
-    # straight off the manifests, same as cargo itself would.
+    # Opt-in gate. Publishing is a deliberate, per-crate, single-registry
+    # decision, so the only two manifest states this script accepts are
+    # `publish = false` (an unpublishable crate — `[]` in cargo metadata)
+    # and `publish = ["coldsteel"]` exactly. Everything else is a hard
+    # error:
+    #
+    #   - an absent `publish` field, and the identical-in-metadata
+    #     `publish = true`, both mean "publishable to crates.io". That is
+    #     cargo's default, which makes the dangerous state the one you get
+    #     by writing nothing — a new crate in a configured workspace would
+    #     publish itself on the next master push, and a human running a
+    #     bare `cargo publish` would send it to the public registry;
+    #   - an array naming any other registry, or naming coldsteel among
+    #     others, is a crate whose blast radius is wider than this job.
+    #
+    # No skip, no "publish the coldsteel ones and ignore the rest": a
+    # manifest this script cannot vouch for stops the whole workspace, per
+    # `docs/agent_guide/no_silent_fallback_values.md`. The fix is always
+    # one line in the named crate's Cargo.toml.
+    local unvetted
+    unvetted=$(jq -r --arg reg "$REGISTRY_NAME" '
+        .packages[]
+        | select(.publish != [] and .publish != [$reg])
+        | "  \(.name) \(.version): publish = " +
+          (if .publish == null then "absent (or `true`)" else (.publish | tojson) end)
+    ' <<<"$meta")
+
+    if [[ -n "$unvetted" ]]; then
+        echo "Error: crate(s) in $root are publishable without an explicit \`publish = [\"$REGISTRY_NAME\"]\`:" >&2
+        echo "$unvetted" >&2
+        echo "Set \`publish = [\"$REGISTRY_NAME\"]\` to publish it here, or \`publish = false\` to keep it out of every registry." >&2
+        exit 1
+    fi
+
+    # Publishable crates: exactly those that named this registry above.
+    # `publish = false` comes back from cargo metadata as an empty array,
+    # which the index() check naturally excludes. Never a hand-maintained
+    # crate list — this reads straight off the manifests, same as cargo
+    # itself would.
     local names_raw
     names_raw=$(jq -r --arg reg "$REGISTRY_NAME" '
         .packages[]
-        | select(.publish == null or (.publish | index($reg) != null))
+        | select(.publish | index($reg) != null)
         | .name
     ' <<<"$meta" | sort)
 
