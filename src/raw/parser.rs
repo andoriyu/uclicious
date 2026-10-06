@@ -76,7 +76,7 @@ impl Parser {
             ucl_parser_add_chunk_full(
                 self.parser,
                 chunk.as_ptr(),
-                chunk.as_bytes().len(),
+                chunk.len(),
                 priority.as_c_uint(),
                 strategy,
                 ucl_parse_type::UCL_PARSE_AUTO,
@@ -270,8 +270,13 @@ mod test {
             need_free: *mut bool,
             _ud: *mut ::std::os::raw::c_void,
         ) -> bool {
+            // Raw handlers receive libucl's buffer verbatim; on libucl 0.9.x the
+            // expansion pass includes the closing brace and trailing bytes, so
+            // trim down to the variable name. The safe `VariableHandler` path
+            // does this automatically.
+            let name_len = unsafe { crate::traits::variable_name_len(data, len) };
             let var = unsafe {
-                let slice = slice_from_raw_parts(data, len).as_ref().unwrap();
+                let slice = slice_from_raw_parts(data, name_len).as_ref().unwrap();
                 std::str::from_utf8(slice).unwrap()
             };
             unsafe {
@@ -279,7 +284,7 @@ mod test {
             }
             if var.eq("WWW") {
                 let test = "asd";
-                let size = test.as_bytes().len();
+                let size = test.len();
                 unsafe {
                     *replace = libc::malloc(size).cast();
                     *replace_len = size;
@@ -330,7 +335,7 @@ mod test {
             }
             if var.eq("WWW") {
                 let test = "asd";
-                let size = test.as_bytes().len();
+                let size = test.len();
                 unsafe {
                     *replace = libc::malloc(size).cast();
                     *replace_len = size;
@@ -383,7 +388,7 @@ mod test {
             }
             if var.eq("WWW") {
                 let test = "asd";
-                let size = test.as_bytes().len();
+                let size = test.len();
                 unsafe {
                     *replace = libc::malloc(size).cast();
                     *replace_len = size;

@@ -1,10 +1,24 @@
 //! Low level library that could be returned by the parser.
-//! Based on https://github.com/draft6/libucl-rs
+//! Based on <https://github.com/draft6/libucl-rs>
 
 use std::error::Error;
 use std::fmt;
 
 use libucl_bind::{ucl_error_t, ucl_schema_error_code};
+
+/// An error returned by a generated builder's `build()` method.
+///
+/// Implements `Send + Sync` and retains the underlying error as its source,
+/// so applications can add context with `anyhow::Context`.
+#[derive(Debug, thiserror::Error)]
+pub enum BuildError {
+    /// The parser could not produce a root object.
+    #[error("{0}")]
+    Parser(#[from] UclError),
+    /// Converting or validating the parsed object failed.
+    #[error("{0}")]
+    Object(#[from] crate::ObjectError),
+}
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum UclErrorType {

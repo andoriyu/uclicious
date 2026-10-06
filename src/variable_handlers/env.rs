@@ -69,9 +69,6 @@ impl VariableHandler for EnvVariableHandler {
 
 #[cfg(test)]
 mod test {
-    use super::*;
-    use crate::traits::VariableHandler;
-    use crate::{Parser, Priority, DEFAULT_DUPLICATE_STRATEGY};
 
     #[cfg(target_os = "freebsd")]
     #[test]

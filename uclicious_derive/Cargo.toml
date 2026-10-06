@@ -1,12 +1,14 @@
 [package]
 name = "uclicious_derive"
-version = "0.1.7"
+version = "0.10.1"
+publish = ["crates-io"]
 authors = ["Andrey Cherkashin <andoriyu@gmail.com>"]
 edition = "2018"
 license = "BSD-2-Clause"
 categories = ["config"]
 keywords = ["config", "uclicious", "derive"]
-description = "Procedural macro to derive FromObject trait from uclicious crate."
+description = "Procedural macro to derive FromObject trait from the uclicious crate."
+repository = "https://github.com/andoriyu/uclicious"
 
 [lib]
 proc-macro = true

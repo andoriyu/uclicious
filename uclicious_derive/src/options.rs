@@ -178,6 +178,11 @@ pub struct Options {
     #[darling(default)]
     skip_builder: bool,
 
+    /// Reject UCL objects that contain keys not mapped to any field. Off by
+    /// default (libucl/uclicious otherwise silently ignore unknown keys).
+    #[darling(default)]
+    deny_unknown_fields: bool,
+
     /// The parsed body of the derived struct.
     data: darling::ast::Data<darling::util::Ignored, Field>,
 
@@ -374,20 +379,42 @@ impl Options {
     }
     /// Get an iterator over the input struct's fields which pulls fallback
     /// values from struct-level settings.
-    pub fn fields(&self) -> FieldIter {
+    pub fn fields(&self) -> FieldIter<'_> {
         FieldIter(self, self.raw_fields().into_iter())
     }
 
-    pub fn as_from_object(&self) -> FromObject {
+    /// Top-level keys that the struct's fields read from. Used by
+    /// `deny_unknown_fields` to detect extra keys. For a dotted `path` only the
+    /// first segment (the top-level key) is collected.
+    fn allowed_top_level_keys(&self) -> Vec<String> {
+        let mut keys: Vec<String> = Vec::with_capacity(self.field_count());
+        for field in self.raw_fields() {
+            let lookup = field.get_lookup_key();
+            let top = lookup
+                .split('.')
+                .next()
+                .unwrap_or(lookup.as_str())
+                .to_string();
+            if !keys.contains(&top) {
+                keys.push(top);
+            }
+        }
+        keys
+    }
+
+    pub fn as_from_object(&self) -> FromObject<'_> {
         FromObject {
             target_ty: self.ident.clone(),
             generics: Some(&self.generics),
             initializers: Vec::with_capacity(self.field_count()),
             default_struct: self.default.as_ref().map(|x| x.parse_block(false)),
+            deny_unknown_fields: self.deny_unknown_fields,
+            allowed_keys: self.allowed_top_level_keys(),
         }
     }
-    pub fn as_builder(&self) -> Builder {
+    pub fn as_builder(&self) -> Builder<'_> {
         Builder {
+            target_ty: &self.ident,
             ident: self.builder_ident(),
             generics: Some(&self.generics),
             visibility: self.builder_vis(),
@@ -400,7 +427,7 @@ impl Options {
             pre_source_hook: self.pre_source_hook.clone(),
         }
     }
-    pub fn as_build_method(&self) -> BuildMethod {
+    pub fn as_build_method(&self) -> BuildMethod<'_> {
         let (_, ty_generics, _) = self.generics.split_for_impl();
         BuildMethod {
             ident: &self.build_fn.name,
@@ -419,7 +446,7 @@ impl Options {
         }
     }
 
-    pub fn as_into_builder(&self) -> IntoBuilder {
+    pub fn as_into_builder(&self) -> IntoBuilder<'_> {
         IntoBuilder {
             ident: self.builder_ident(),
             visibility: self.build_method_vis(),

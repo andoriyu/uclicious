@@ -26,6 +26,21 @@ Uclicious is built on top of [libucl](https://github.com/vstakhov/libucl). If yo
 It is much more complex than json or TOML, so I recommend reading documentaiton about it. Author of UCL did a great job documenting it. This library provides both: derive-driven and raw-api driven usage patterns.
 
 ## Usage
+
+Version 0.10 requires **libucl 0.9.x** and **pkg-config** on the build machine.
+The FFI crate links the system library; it no longer builds a bundled copy.
+Make sure `pkg-config --modversion libucl` succeeds before building.
+
+For development, `nix develop` provides Rust, libucl, pkg-config, and the tools
+needed to regenerate the committed FFI bindings. Run `cargo test --workspace`
+inside that shell. No devenv setup is required.
+
+Generated `build()` methods return `Result<T, uclicious::BuildError>` with
+`Parser` and `Object` variants. The error supports `Send + Sync` and
+`anyhow::Context`. Generic derives preserve explicit bounds and defaults.
+Use `#[ucl(deny_unknown_fields)]` to reject configuration keys not mapped to
+fields.
+
 ### Raw API
 
 Raw API involves interacting with `libucl` parser via safe api:

@@ -7,7 +7,7 @@ use std::os::raw::c_uint;
 ///
 /// By default, the priority of top-level object is set to zero (the lowest priority). Currently, you can define up to 16 priorities (from 0 to 16).
 /// Includes with bigger priorities will rewrite keys from the objects with lower priorities as specified by the policy.
-#[derive(Debug, Eq, PartialEq, Copy, Clone)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone, Default)]
 pub struct Priority(c_uint);
 
 impl Priority {
@@ -19,13 +19,7 @@ impl Priority {
 
     #[inline]
     fn normalize_signed(source: i64) -> Priority {
-        let priority = if source > 16 {
-            16
-        } else if source < 0 {
-            0
-        } else {
-            source
-        };
+        let priority = source.clamp(0, 16);
         Priority(priority as u32)
     }
 
@@ -38,12 +32,6 @@ impl Priority {
     #[inline]
     pub fn as_c_uint(self) -> c_uint {
         self.0
-    }
-}
-
-impl Default for Priority {
-    fn default() -> Self {
-        Priority(0)
     }
 }
 

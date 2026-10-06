@@ -1,4 +1,8 @@
 #![recursion_limit = "128"]
+// darling's `FromDeriveInput`/`FromField` structs capture some attributes
+// (idents, attrs, visibility, types) for completeness that this macro does not
+// read; that is by design, not dead plumbing.
+#![allow(dead_code)]
 extern crate proc_macro;
 extern crate proc_macro2;
 

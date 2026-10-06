@@ -1,4 +1,3 @@
-use uclicious;
 use uclicious::raw::*;
 
 fn main() {
@@ -11,9 +10,9 @@ fn main() {
 
     let result = parser.get_object().unwrap();
     let lookup_result = result.lookup("game").unwrap();
-    assert_eq!(true, lookup_result.as_bool().unwrap());
-    drop(lookup_result);
+    assert!(lookup_result.as_bool().unwrap());
+    let _ = lookup_result;
 
     let lookup_result = result.lookup("game").unwrap();
-    assert_eq!(true, lookup_result.as_bool().unwrap());
+    assert!(lookup_result.as_bool().unwrap());
 }

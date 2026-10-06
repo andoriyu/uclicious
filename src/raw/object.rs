@@ -378,7 +378,7 @@ impl ObjectRef {
     }
 
     /// Preferred way to construct an iterator. Items returned by this iterator are always `ObjectRef`.
-    pub fn iter(&self) -> Iter {
+    pub fn iter(&self) -> Iter<'_> {
         Iter::new(self)
     }
 }
@@ -738,31 +738,30 @@ impl Clone for Object {
 
 impl PartialOrd for ObjectRef {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        let cmp = unsafe { ucl_object_compare(self.as_ptr(), other.as_ptr()) };
-        match cmp {
-            cmp if cmp == 0 => Some(Ordering::Equal),
-            cmp if cmp < 0 => Some(Ordering::Less),
-            cmp if cmp > 0 => Some(Ordering::Greater),
-            _ => unreachable!(),
-        }
+        Some(self.cmp(other))
     }
 }
 
 impl Ord for ObjectRef {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.partial_cmp(other).unwrap()
+        let cmp = unsafe { ucl_object_compare(self.as_ptr(), other.as_ptr()) };
+        match cmp {
+            0 => Ordering::Equal,
+            c if c < 0 => Ordering::Less,
+            _ => Ordering::Greater,
+        }
     }
 }
 
 impl PartialOrd for Object {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.as_ref().partial_cmp(other.as_ref())
+        Some(self.cmp(other))
     }
 }
 
 impl Ord for Object {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.partial_cmp(other).unwrap()
+        self.as_ref().cmp(other.as_ref())
     }
 }
 #[cfg(test)]
