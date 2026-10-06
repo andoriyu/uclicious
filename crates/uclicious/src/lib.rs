@@ -141,6 +141,8 @@
 //! ```
 //!
 //! If you choose to derive builder then `::builder()` method will be added to target struct.
+//! The generated `build()` method returns `Result<Self, BuildError>`. Match
+//! [`BuildError::Parser`] or [`BuildError::Object`] to inspect the underlying error.
 //!
 //! #### Validators
 //!
@@ -377,7 +379,7 @@ pub mod raw;
 pub mod traits;
 pub mod variable_handlers;
 
-pub use error::{UclError, UclErrorType};
+pub use error::{BuildError, UclError, UclErrorType};
 pub use raw::{
     DuplicateStrategy, Object, ObjectError, ObjectRef, Parser, ParserFlags, Priority,
     DEFAULT_DUPLICATE_STRATEGY, DEFAULT_PARSER_FLAG,

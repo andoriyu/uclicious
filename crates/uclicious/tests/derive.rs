@@ -4,6 +4,146 @@ use uclicious::Uclicious;
 use uclicious::{variable_handlers, Priority, UclError, DEFAULT_DUPLICATE_STRATEGY};
 
 #[test]
+fn derive_with_generics() {
+    use uclicious::{FromObject, ObjectRef};
+
+    #[derive(Uclicious, Debug)]
+    struct Config<T = i64>
+    where
+        T: FromObject<ObjectRef>,
+    {
+        value: T,
+    }
+
+    let mut builder: ConfigBuilder = ConfigBuilder::new().unwrap();
+    builder
+        .add_chunk_full(
+            "value = 42",
+            Priority::default(),
+            DEFAULT_DUPLICATE_STRATEGY,
+        )
+        .unwrap();
+    assert_eq!(builder.build().unwrap().value, 42);
+
+    let mut builder = Config::<String>::builder().unwrap();
+    builder
+        .add_chunk_full(
+            "value = hello",
+            Priority::default(),
+            DEFAULT_DUPLICATE_STRATEGY,
+        )
+        .unwrap();
+    assert_eq!(builder.build().unwrap().value, "hello");
+
+    #[derive(Uclicious, Debug)]
+    #[ucl(skip_builder)]
+    struct Inner<T: FromObject<ObjectRef>> {
+        value: T,
+    }
+
+    let mut parser = uclicious::Parser::default();
+    parser
+        .add_chunk_full(
+            "value = 7; nested { value = 7; }",
+            Priority::default(),
+            DEFAULT_DUPLICATE_STRATEGY,
+        )
+        .unwrap();
+    let root = parser.get_object().unwrap();
+    let borrowed = <Inner<i64> as FromObject<&ObjectRef>>::try_from(&root).unwrap();
+    let reference =
+        <Inner<i64> as FromObject<ObjectRef>>::try_from(root.lookup("nested").unwrap()).unwrap();
+    let owned = <Inner<i64> as FromObject<uclicious::Object>>::try_from(root).unwrap();
+    assert_eq!((borrowed.value, reference.value, owned.value), (7, 7, 7));
+}
+
+#[test]
+fn derive_with_lifetime_and_const_generics() {
+    use std::marker::PhantomData;
+    use uclicious::{ObjectError, ObjectRef};
+
+    fn marker<T>(_: ObjectRef) -> Result<PhantomData<T>, ObjectError> {
+        Ok(PhantomData)
+    }
+
+    #[derive(Uclicious)]
+    struct Config<'a, const N: usize = 4> {
+        value: i64,
+        #[ucl(default, map = "marker")]
+        marker: PhantomData<&'a [u8; N]>,
+    }
+
+    let mut builder: ConfigBuilder<'_> = Config::builder().unwrap();
+    builder
+        .add_chunk_full("value = 9", Priority::default(), DEFAULT_DUPLICATE_STRATEGY)
+        .unwrap();
+    let config = builder.build().unwrap();
+    assert_eq!(config.value, 9);
+    assert_eq!(config.marker, PhantomData);
+}
+
+#[test]
+fn build_errors_support_context_and_preserve_sources() {
+    use anyhow::Context;
+    use std::error::Error;
+    use uclicious::{BuildError, ObjectError};
+
+    fn assert_thread_safe_error<E: Error + Send + Sync + 'static>() {}
+    assert_thread_safe_error::<BuildError>();
+
+    #[derive(Uclicious, Debug)]
+    struct Config {
+        value: i64,
+    }
+
+    let mut builder = Config::builder().unwrap();
+    let parser_error = builder
+        .add_chunk_full("value = {", Priority::default(), DEFAULT_DUPLICATE_STRATEGY)
+        .unwrap_err();
+    let error = BuildError::from(parser_error);
+    assert!(matches!(&error, BuildError::Parser(_)));
+    assert!(error.source().unwrap().is::<UclError>());
+    assert_eq!(error.to_string(), error.source().unwrap().to_string());
+
+    let mut builder = Config::builder().unwrap();
+    builder
+        .add_chunk_full("other = 1", Priority::default(), DEFAULT_DUPLICATE_STRATEGY)
+        .unwrap();
+    let error = builder
+        .build()
+        .context("loading configuration")
+        .unwrap_err();
+    assert_eq!(error.to_string(), "loading configuration");
+    assert!(matches!(
+        error.downcast_ref::<BuildError>(),
+        Some(BuildError::Object(ObjectError::KeyNotFound(key))) if key == "value"
+    ));
+    let source = error
+        .downcast_ref::<BuildError>()
+        .unwrap()
+        .source()
+        .unwrap();
+    assert!(source.is::<ObjectError>());
+
+    let mut builder = Config::builder().unwrap();
+    builder
+        .add_chunk_full(
+            "value = 42",
+            Priority::default(),
+            DEFAULT_DUPLICATE_STRATEGY,
+        )
+        .unwrap();
+    assert_eq!(
+        builder
+            .build()
+            .context("loading configuration")
+            .unwrap()
+            .value,
+        42
+    );
+}
+
+#[test]
 fn derive_with_hook() {
     fn add_handlers(parser: &mut uclicious::Parser) -> Result<(), UclError> {
         let www = |data: *const ::std::os::raw::c_uchar,

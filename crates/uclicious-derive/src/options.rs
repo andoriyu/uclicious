@@ -414,6 +414,7 @@ impl Options {
     }
     pub fn as_builder(&self) -> Builder<'_> {
         Builder {
+            target_ty: &self.ident,
             ident: self.builder_ident(),
             generics: Some(&self.generics),
             visibility: self.builder_vis(),

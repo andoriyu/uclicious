@@ -58,9 +58,9 @@ pub fn from_str_trait() -> Path {
     syn::parse_str("::std::str::FromStr").unwrap()
 }
 
-/// Boxed error type
-pub fn boxed_error() -> Type {
-    syn::parse_str("::std::boxed::Box<dyn ::std::error::Error>").unwrap()
+/// Generated builder error type.
+pub fn build_error() -> Path {
+    syn::parse_str("::uclicious::BuildError").unwrap()
 }
 
 pub fn deref_trait() -> Type {

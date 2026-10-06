@@ -1,6 +1,17 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.10.0]
+
+- Fix generic derives by preserving type parameters, lifetimes, const generics,
+  defaults, and bounds in generated builders and `FromObject` implementations
+  (GitHub issue #23).
+
+- Replace the generated `build()` method's boxed error with `BuildError`, a
+  `thiserror` enum with `Parser` and `Object` variants. The error supports
+  `Send + Sync`, preserves error sources, and works with `anyhow::Context`
+  (GitHub issue #27). This changes the public return type.
+
 ## [0.1.8] - 2023-04-25
 
 ### Documentation
