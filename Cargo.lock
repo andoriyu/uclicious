@@ -141,7 +141,7 @@ dependencies = [
 
 [[package]]
 name = "uclicious"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "anyhow",
  "bitflags",
@@ -153,7 +153,7 @@ dependencies = [
 
 [[package]]
 name = "uclicious-libucl-sys"
-version = "0.9.1"
+version = "0.9.2"
 dependencies = [
  "bitflags",
  "libc",
@@ -162,7 +162,7 @@ dependencies = [
 
 [[package]]
 name = "uclicious_derive"
-version = "0.10.0"
+version = "0.10.1"
 dependencies = [
  "darling",
  "proc-macro2",
