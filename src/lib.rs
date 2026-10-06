@@ -141,6 +141,8 @@
 //! ```
 //!
 //! If you choose to derive builder then `::builder()` method will be added to target struct.
+//! The generated `build()` method returns `Result<Self, BuildError>`. Match
+//! [`BuildError::Parser`] or [`BuildError::Object`] to inspect the underlying error.
 //!
 //! #### Validators
 //!
@@ -377,12 +379,12 @@ pub mod raw;
 pub mod traits;
 pub mod variable_handlers;
 
-pub use error::{UclError, UclErrorType};
+pub use error::{BuildError, UclError, UclErrorType};
 pub use raw::{
     DuplicateStrategy, Object, ObjectError, ObjectRef, Parser, ParserFlags, Priority,
     DEFAULT_DUPLICATE_STRATEGY, DEFAULT_PARSER_FLAG,
 };
-pub use traits::{FromObject, TryInto};
+pub use traits::{variable_name_len, FromObject, TryInto};
 
 #[cfg(feature = "uclicious_derive")]
 #[allow(unused_imports)]
@@ -399,6 +401,7 @@ mod test {
     use std::collections::HashMap;
 
     #[test]
+    #[allow(clippy::approx_constant)] // 3.14 is a deliberate float fixture, not π
     fn primitives_from_object() {
         let input = r#"
             i64 = 1
@@ -420,7 +423,7 @@ mod test {
         let root = parser.get_object().unwrap();
 
         let boolean: bool = FromObject::try_from(root.lookup("bool").unwrap()).unwrap();
-        assert_eq!(true, boolean);
+        assert!(boolean);
 
         let float64: f64 = FromObject::try_from(root.lookup("f64").unwrap()).unwrap();
         assert_eq!(3.14f64, float64);

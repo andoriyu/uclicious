@@ -58,6 +58,7 @@ mod test {
     }
 
     #[test]
+    #[allow(clippy::approx_constant)] // 3.14 is a deliberate float fixture, not π
     fn float_parsing() {
         let mut parser = Parser::default();
         let input = r#"pi = 3.14"#;
@@ -84,7 +85,7 @@ mod test {
         let result = parser.get_object().unwrap();
         let lookup_result = result.lookup("game").unwrap().as_bool().unwrap();
 
-        assert_eq!(true, lookup_result);
+        assert!(lookup_result);
     }
 
     #[test]
@@ -147,11 +148,11 @@ mod test {
 
         let result = parser.get_object().unwrap();
         let lookup_result = result.lookup("game").unwrap();
-        assert_eq!(true, lookup_result.as_bool().unwrap());
-        drop(lookup_result);
+        assert!(lookup_result.as_bool().unwrap());
+        let _ = lookup_result;
 
         let lookup_result = result.lookup("game").unwrap();
-        assert_eq!(true, lookup_result.as_bool().unwrap());
+        assert!(lookup_result.as_bool().unwrap());
     }
 
     #[test]
@@ -173,10 +174,11 @@ mod test {
     }
 
     #[test]
+    #[allow(clippy::approx_constant)] // 3.14 is a deliberate float fixture, not π
     fn object_from_primitive() {
         let obj_boolean = Object::from(false);
         assert_eq!(ucl_type_t::UCL_BOOLEAN, obj_boolean.kind());
-        assert_eq!(false, obj_boolean.as_bool().unwrap());
+        assert!(!obj_boolean.as_bool().unwrap());
 
         let obj_i64 = Object::from(1776i64);
         assert_eq!(ucl_type_t::UCL_INT, obj_i64.kind());

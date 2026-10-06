@@ -50,7 +50,7 @@ impl<'data> Iterator for Iter<'data> {
     type Item = ObjectRef;
 
     fn next(&mut self) -> Option<Self::Item> {
-        iterate(&self.object, self.inner)
+        iterate(self.object, self.inner)
     }
 }
 

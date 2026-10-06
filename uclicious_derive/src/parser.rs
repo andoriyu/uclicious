@@ -3,6 +3,7 @@ use darling::ToTokens;
 use proc_macro2::{Ident, TokenStream};
 use quote::TokenStreamExt;
 
+#[derive(Default)]
 pub struct ParserField {}
 
 impl ToTokens for ParserField {
@@ -12,12 +13,6 @@ impl ToTokens for ParserField {
         tokens.append_all(quote!(
             #ident: #ty,
         ))
-    }
-}
-
-impl Default for ParserField {
-    fn default() -> Self {
-        ParserField {}
     }
 }
 

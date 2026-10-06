@@ -34,6 +34,7 @@ impl TryFrom<String> for Visibility {
     }
 }
 #[derive(Debug, Uclicious)]
+#[allow(dead_code)] // The example displays the parsed fields through Debug.
 #[ucl(var(name = "test", value = "works"))]
 #[ucl(include(path = "test.ucl"))]
 #[ucl(include(
@@ -66,6 +67,7 @@ pub struct Connection {
 
 #[derive(Debug, Uclicious)]
 #[ucl(skip_builder)]
+#[allow(dead_code)] // Displayed as part of Connection's Debug output.
 pub struct Extra {
     enabled: bool,
 }

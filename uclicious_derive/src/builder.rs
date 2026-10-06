@@ -9,6 +9,8 @@ use syn::punctuated::Punctuated;
 use syn::Path;
 
 pub struct Builder<'a> {
+    /// Target type, used to retain its generic parameters in the builder.
+    pub target_ty: &'a syn::Ident,
     /// Name of this builder struct.
     pub ident: syn::Ident,
     /// Type parameters and lifetimes attached to this builder's struct
@@ -113,12 +115,17 @@ pub struct FromObject<'a> {
     ///
     /// This will be in scope for all initializers as `__default`.
     pub default_struct: Option<Block>,
+    /// When set, reject source objects that carry keys not mapped to any field.
+    pub deny_unknown_fields: bool,
+    /// Top-level keys that the struct's fields read from (for `deny_unknown_fields`).
+    pub allowed_keys: Vec<String>,
 }
 
 impl<'a> ToTokens for FromObject<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let target_ty = &self.target_ty;
-        let target_ty_generics = &self.generics;
+        let generics = self.generics.cloned().unwrap_or_default();
+        let (impl_generics, target_ty_generics, where_clause) = generics.split_for_impl();
         let initializers = &self.initializers;
 
         let result = bindings::result_ty();
@@ -128,20 +135,43 @@ impl<'a> ToTokens for FromObject<'a> {
         let obj_ty = bindings::ucl_object_ty();
         let borrow = bindings::borrow_trait();
 
+        let deny_unknown_fields = if self.deny_unknown_fields {
+            let allowed = &self.allowed_keys;
+            quote!(
+                {
+                    const __ALLOWED_KEYS: &[&str] = &[ #(#allowed),* ];
+                    for __child in root.iter() {
+                        if let Some(__key) = __child.key() {
+                            if !__ALLOWED_KEYS.contains(&__key.as_str()) {
+                                return Err(#error_ty::other(format!(
+                                    "unknown field `{}` for `{}`",
+                                    __key,
+                                    stringify!(#target_ty)
+                                )));
+                            }
+                        }
+                    }
+                }
+            )
+        } else {
+            quote!()
+        };
+
         tokens.append_all(quote!(
-            impl #try_from<&#obj_ref_ty> for #target_ty #target_ty_generics {
+            impl #impl_generics #try_from<&#obj_ref_ty> for #target_ty #target_ty_generics #where_clause {
                 fn try_from(root: &#obj_ref_ty) -> #result<Self, #error_ty> {
+                    #deny_unknown_fields
                     Ok(#target_ty {
                             #(#initializers)*
                     })
                 }
             }
-            impl #try_from<#obj_ref_ty> for #target_ty #target_ty_generics {
+            impl #impl_generics #try_from<#obj_ref_ty> for #target_ty #target_ty_generics #where_clause {
                 fn try_from(source: #obj_ref_ty) -> #result<Self, #error_ty> {
                     #try_from::try_from(&source)
                 }
             }
-            impl #try_from<#obj_ty> for #target_ty #target_ty_generics {
+            impl #impl_generics #try_from<#obj_ty> for #target_ty #target_ty_generics #where_clause {
                 fn try_from(source: #obj_ty) -> #result<Self, #error_ty> {
                     let obj: &#obj_ref_ty = #borrow::borrow(&source);
                     #try_from::try_from(obj)
@@ -161,16 +191,14 @@ impl<'a> ToTokens for BuildMethod<'a> {
             quote!(let #ident: #target_ty #target_ty_generics = #default_expr;)
         });
         let result = bindings::result_ty();
-        let boxed_error = bindings::boxed_error();
-        let ucl_error_ty = bindings::ucl_parser_error();
-        let ucl_obj_error_ty = bindings::ucl_object_error();
+        let build_error = bindings::build_error();
         let from_obj = bindings::from_object_trait();
         tokens.append_all(quote!(
             #[doc = "Build target struct or return first encountered error."]
-            #vis fn #ident(mut self) -> #result<#target_ty #target_ty_generics, #boxed_error> {
+            #vis fn #ident(mut self) -> #result<#target_ty #target_ty_generics, #build_error> {
                 #default_struct
-                let root = self.__parser.get_object().map_err(|e: #ucl_error_ty| e.boxed() as #boxed_error)?;
-                #from_obj::try_from(root).map_err(|e: #ucl_obj_error_ty| e.boxed() as #boxed_error)
+                let root = self.__parser.get_object()?;
+                #from_obj::try_from(root).map_err(#build_error::from)
             }
         ))
     }
@@ -179,9 +207,11 @@ impl<'a> ToTokens for Builder<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let builder_vis = &self.visibility;
         let builder_ident = &self.ident;
+        let target_ty = self.target_ty;
         let bounded_generics = self.compute_impl_bounds();
         let (impl_generics, _, _) = bounded_generics.split_for_impl();
-        let (struct_generics, ty_generics, where_clause) = self
+        let struct_generics = &self.generics;
+        let (_, ty_generics, where_clause) = self
             .generics
             .map(syn::Generics::split_for_impl)
             .map(|(i, t, w)| (Some(i), Some(t), Some(w)))
@@ -207,29 +237,31 @@ impl<'a> ToTokens for Builder<'a> {
             quote!()
         };
         tokens.append_all(quote!(
-                #[derive(#derived_traits)]
-                #builder_doc_comment
-                #builder_vis struct #builder_ident #struct_generics #where_clause {
-                    #(#builder_fields)*
-                }
+            #[derive(#derived_traits)]
+            #builder_doc_comment
+            #builder_vis struct #builder_ident #struct_generics #where_clause {
+                #(#builder_fields)*
+                __target: ::std::marker::PhantomData<fn() -> #target_ty #ty_generics>,
+            }
 
-                #[allow(dead_code)]
-                impl #impl_generics #builder_ident #ty_generics #where_clause {
-                    #(#functions)*
-                    /// Create a new builder.
-                    #builder_vis fn new() -> #result_ty<Self #ty_generics #where_clause, #ucl_error_ty> {
-                        #parser
-                        #(#vars)*
-                        #pre_source_hook
-                        #(#includes)*
-                        Ok(
-                            Self {
-                                __parser: parser
-                            }
-                        )
-                    }
+            #[allow(dead_code)]
+            impl #impl_generics #builder_ident #ty_generics #where_clause {
+                #(#functions)*
+                /// Create a new builder.
+                #builder_vis fn new() -> #result_ty<Self, #ucl_error_ty> {
+                    #parser
+                    #(#vars)*
+                    #pre_source_hook
+                    #(#includes)*
+                    Ok(
+                        Self {
+                            __parser: parser,
+                            __target: ::std::marker::PhantomData,
+                        }
+                    )
                 }
-            ));
+            }
+        ));
     }
 }
 
@@ -240,15 +272,15 @@ impl<'a> ToTokens for IntoBuilder<'a> {
         let target = &self.target_ty;
         let result_ty = bindings::result_ty();
         let ucl_error_ty = bindings::ucl_parser_error();
-        let (_struct_generics, ty_generics, where_clause) = self
+        let (impl_generics, ty_generics, where_clause) = self
             .generics
             .map(syn::Generics::split_for_impl)
             .map(|(i, t, w)| (Some(i), Some(t), Some(w)))
             .unwrap_or((None, None, None));
         tokens.append_all(quote!(
-            impl #target {
+            impl #impl_generics #target #ty_generics #where_clause {
                 /// Creates a builder struct that can be used to create this struct.
-                #builder_vis fn builder() -> #result_ty<#builder_ident #ty_generics #where_clause, #ucl_error_ty> {
+                #builder_vis fn builder() -> #result_ty<#builder_ident #ty_generics, #ucl_error_ty> {
                     #builder_ident::new()
                 }
             }

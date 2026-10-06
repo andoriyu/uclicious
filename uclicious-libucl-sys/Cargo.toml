@@ -1,0 +1,22 @@
+[package]
+name = "uclicious-libucl-sys"
+version = "0.9.2"
+publish = ["crates-io"]
+description = "Low-level FFI bindings to libucl (0.9.x), linked via pkg-config."
+authors = [
+  "Łukasz Niemier <lukasz@niemier.pl>",
+  "Igor Laćarac <draftsix@gmail.com>",
+  "Andrey Cherkashin <andoriyu@gmail.com>",
+]
+edition = "2018"
+license-file = "LICENSE"
+repository = "https://github.com/andoriyu/uclicious"
+build = "build.rs"
+links = "ucl"
+
+[dependencies]
+libc = "0.2.66"
+bitflags = "1.2"
+
+[build-dependencies]
+pkg-config = "0.3.17"

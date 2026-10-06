@@ -55,7 +55,7 @@ impl<'a> Initializer<'a> {
             }
         }
     }
-    fn match_some(&'a self) -> MatchSome {
+    fn match_some(&'a self) -> MatchSome<'a> {
         match (
             &self.validation,
             &self.from,

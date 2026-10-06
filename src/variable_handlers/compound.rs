@@ -29,7 +29,6 @@ impl Default for CompoundHandler {
                 if handler.handle(data, len, replace, replace_len, need_free) {
                     found = true;
                     break;
-                } else {
                 }
             }
             found
@@ -89,7 +88,7 @@ mod test {
             };
             if var.eq("WWW") {
                 let test = "asd";
-                let size = test.as_bytes().len();
+                let size = test.len();
                 unsafe {
                     *replace = libc::malloc(size).cast();
                     *replace_len = size;
@@ -115,7 +114,7 @@ mod test {
             };
             if var.eq("ZZZ") {
                 let test = "dsa";
-                let size = test.as_bytes().len();
+                let size = test.len();
                 unsafe {
                     *replace = libc::malloc(size).cast();
                     *replace_len = size;

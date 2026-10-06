@@ -1,52 +1,23 @@
----
-on: push
-name: Quick Checks
+name: Checks
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
 jobs:
-  clippy_check:
-    name: Clippy Check
+  check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Install stable
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-          components: clippy
-      - uses: actions-rs/clippy-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: --all-features
-  cargo_check:
-    name: Cargo Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Install latest nightly
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-      - name: Run cargo check
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
-  fmt_check:
-    name: Style Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Install latest nightly
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-          components: rustfmt
-      - name: Run cargo check
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
+      - uses: actions/checkout@v4
+      - uses: cachix/install-nix-action@v31
+      - name: Check formatting
+        run: nix develop --command cargo fmt --all -- --check
+      - name: Clippy
+        run: nix develop --command cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
+      - name: Tests
+        run: nix develop --command cargo test --workspace --all-features --locked
+      - name: Documentation without native libraries
+        env:
+          DOCS_RS: "1"
+          LIBUCL_NO_PKG_CONFIG: "1"
+        run: nix develop --command cargo doc --workspace --no-deps --locked
