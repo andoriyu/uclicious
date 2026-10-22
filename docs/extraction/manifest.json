@@ -1,0 +1,14 @@
+{
+  "fd": "Coldsteel/foundry#1017",
+  "source_revision": "f3499aa4ed0113aa7efa48b8dfd462c84a63cab5",
+  "destination": "Coldsteel/uclicious",
+  "paths": {
+    "uclicious/": "",
+    "scripts/publish-changed.sh": "scripts/publish-changed.sh"
+  },
+  "verified_files": 45,
+  "imported_commit_count": 19,
+  "imported_revision": "02ce91232bc7b093080a12d2748f31d325985e49",
+  "history_notes": "Representative main, derive and sys crate files originate at Foundry import 4bc63094; no earlier paths found through follow history.",
+  "filter_repo_version": "2.47.0"
+}

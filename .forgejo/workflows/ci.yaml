@@ -1,0 +1,33 @@
+name: CI
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+jobs:
+  rust:
+    uses: Coldsteel/molds/.forgejo/workflows/rust-ci.yaml@bd0ccfff73dbc6845f3263b9e722870bf8be4424
+    secrets:
+      GH_PAT: ${{ secrets.GH_PAT }}
+  nix:
+    uses: Coldsteel/molds/.forgejo/workflows/nix-ci.yaml@bd0ccfff73dbc6845f3263b9e722870bf8be4424
+    secrets:
+      GH_PAT: ${{ secrets.GH_PAT }}
+  publish-plan:
+    runs-on: beefy
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check registry versions and publishing order
+        shell: devenv --no-tui shell --profile ci -- bash -eo pipefail {0}
+        run: bash scripts/publish-changed.sh .
+  publish:
+    needs: [rust, nix, publish-plan]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: beefy
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish missing versions to coldsteel
+        shell: devenv --no-tui shell --profile ci -- bash -eo pipefail {0}
+        env:
+          CARGO_REGISTRIES_COLDSTEEL_TOKEN: ${{ secrets.CARGO_REGISTRIES_COLDSTEEL_TOKEN }}
+        run: bash scripts/publish-changed.sh --publish .

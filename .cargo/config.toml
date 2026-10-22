@@ -1,0 +1,2 @@
+[registries.coldsteel]
+index = "sparse+https://cargo.coldsteel.casa/api/v1/crates/"

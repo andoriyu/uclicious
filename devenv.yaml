@@ -1,7 +1,7 @@
 ---
 inputs:
   molds:
-    url: git+ssh://forgejo@git.coldsteel.casa/Coldsteel/molds.git
+    url: git+https://git.coldsteel.casa/Coldsteel/molds.git
   nixpkgs:
     follows: molds/nixpkgs-unstable
   nixpkgs-unstable:
