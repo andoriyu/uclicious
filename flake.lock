@@ -48,11 +48,11 @@
         "rust-overlay": "rust-overlay"
       },
       "locked": {
-        "lastModified": 1792414651,
-        "narHash": "sha256-2KKD5s7ZHwhFToFLAxRtezSIYevuo8Tpvl41E7LgfPU=",
+        "lastModified": 1792680408,
+        "narHash": "sha256-YuGsT2+WYaBrbuobaNeeGS7ogjoEgSxl3m2JR4XbfgU=",
         "owner": "cachix",
         "repo": "devenv",
-        "rev": "ff0d7e76dc83bef8eb4f83f7985ff2d792234440",
+        "rev": "d9f86dc6fe4cb74c0f9377e5535acc0cdacee721",
         "type": "github"
       },
       "original": {
@@ -257,11 +257,11 @@
         "rust-overlay": "rust-overlay_2"
       },
       "locked": {
-        "lastModified": 1792635648,
-        "narHash": "sha256-U0dZXpcxqkpVrIEHIohXj+NU7TKNeBsAcr6VaHYKR2s=",
+        "lastModified": 1792861643,
+        "narHash": "sha256-ZQP9r6b9ahhszsIiTQKJe1luHnkibZ9Zblb9psnwHbM=",
         "ref": "refs/heads/main",
-        "rev": "bd0ccfff73dbc6845f3263b9e722870bf8be4424",
-        "revCount": 49,
+        "rev": "8fcb69c77ee781d532cda085de8b2be2d86a1645",
+        "revCount": 60,
         "type": "git",
         "url": "https://git.coldsteel.casa/Coldsteel/molds.git"
       },
@@ -302,11 +302,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1792015234,
-        "narHash": "sha256-HBX0GszzUDIkPUL9dtNzhxeKBBJ2vyot3iIyyajEtmY=",
+        "lastModified": 1792603708,
+        "narHash": "sha256-9KB9OFCP71d8n4Gg09saO6H1VuVzHdjusheiHtgn9jc=",
         "owner": "cachix",
         "repo": "nix",
-        "rev": "ab229d688f8402ef858ba69487e832075f7358e2",
+        "rev": "082f14105a3e545e1d60bbbc9028dba19f114a0d",
         "type": "github"
       },
       "original": {
@@ -362,11 +362,11 @@
     },
     "nixpkgs-unstable": {
       "locked": {
-        "lastModified": 1792116957,
-        "narHash": "sha256-EjZqHKObBfIOeHZnMRVV87HB3pPq/WBkmRJWyFxmZu8=",
+        "lastModified": 1792506237,
+        "narHash": "sha256-Q/8KLB6jNfpaUN1HAedE/u/Et9feE/zYSsutBLKrCFk=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "f20cd90e28fe0403873f473b29e42662cd86e8c4",
+        "rev": "5adc50831c259f87faeb09ddf930d43597197473",
         "type": "github"
       },
       "original": {
@@ -378,11 +378,11 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1792422028,
-        "narHash": "sha256-qVt97ILUu2DorFGGEi+mqVuzOF8R18fQLgFkHiLrNfE=",
+        "lastModified": 1792615934,
+        "narHash": "sha256-MlvRfa1O5Cqc2/a+gG+l9TSuowEoCKCmrJ1d9oAVm0I=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "f3a73bcf5d1c5b75a66cf35a48957e30d41d647a",
+        "rev": "da6dc0e7b26060f2f71ce3ef7088fb56ee44fa36",
         "type": "github"
       },
       "original": {
@@ -400,11 +400,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1792214446,
-        "narHash": "sha256-tq6x6CRG8Qikrjri59tzu9+b2gri8TjnShkGeh8kUgQ=",
+        "lastModified": 1792651682,
+        "narHash": "sha256-TiCGqLMpNIy7FERewgfKVluPsLVF96uc6x6xwZnMjdQ=",
         "owner": "quickshell-mirror",
         "repo": "quickshell",
-        "rev": "2b4501a282689792b62e94f3fb30d8f512324fe6",
+        "rev": "9b0f339b19057f4731bf3b48293307d7ef241671",
         "type": "github"
       },
       "original": {
@@ -477,11 +477,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1792395246,
-        "narHash": "sha256-SfVFE7TKuByeQRwhVbaVrvTV/lI41AYK9CYSfB+pIis=",
+        "lastModified": 1792653800,
+        "narHash": "sha256-E8zFJilWlORqzIUJizyhZ/0WKBOizuM6s1nRSgPRomo=",
         "owner": "oxalica",
         "repo": "rust-overlay",
-        "rev": "550547cefc67e01a6fd11a09e4096a3c844ca840",
+        "rev": "5f267b7f323a4d6df0b9c0e3eaa043cbe85386f2",
         "type": "github"
       },
       "original": {
