@@ -6,11 +6,11 @@ on:
     branches: [master]
 jobs:
   rust:
-    uses: Coldsteel/molds/.forgejo/workflows/rust-ci.yaml@8fcb69c77ee781d532cda085de8b2be2d86a1645
+    uses: Coldsteel/molds/.forgejo/workflows/rust-ci.yaml@7e5e5a4cc3c00d37791aed81a2b7cff48216b527
     secrets:
       GH_PAT: ${{ secrets.GH_PAT }}
   nix:
-    uses: Coldsteel/molds/.forgejo/workflows/nix-ci.yaml@8fcb69c77ee781d532cda085de8b2be2d86a1645
+    uses: Coldsteel/molds/.forgejo/workflows/nix-ci.yaml@7e5e5a4cc3c00d37791aed81a2b7cff48216b527
     secrets:
       GH_PAT: ${{ secrets.GH_PAT }}
   publish-plan:
