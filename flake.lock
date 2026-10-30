@@ -243,6 +243,28 @@
         "type": "github"
       }
     },
+    "microvm": {
+      "inputs": {
+        "nixpkgs": [
+          "molds",
+          "nixpkgs"
+        ],
+        "spectrum": "spectrum"
+      },
+      "locked": {
+        "lastModified": 1793281488,
+        "narHash": "sha256-ErGIqtoWEX9KKC8NFtJDx2pGGG02Cr6LGxrvzLd2sqA=",
+        "owner": "microvm-nix",
+        "repo": "microvm.nix",
+        "rev": "b7bd556974fa8a171b5b639200e81d52244dfde4",
+        "type": "github"
+      },
+      "original": {
+        "owner": "microvm-nix",
+        "repo": "microvm.nix",
+        "type": "github"
+      }
+    },
     "molds": {
       "inputs": {
         "crane": "crane",
@@ -251,17 +273,18 @@
         "fenix": "fenix",
         "flake-parts": "flake-parts_2",
         "git-hooks": "git-hooks_2",
+        "microvm": "microvm",
         "nixpkgs": "nixpkgs_2",
         "nixpkgs-unstable": "nixpkgs-unstable",
         "quickshell": "quickshell",
         "rust-overlay": "rust-overlay_2"
       },
       "locked": {
-        "lastModified": 1793374257,
-        "narHash": "sha256-YZHgh8NtUic/AhqKGUgisKTB9lpQ3X+JSNT+qz4cpl8=",
+        "lastModified": 1793379876,
+        "narHash": "sha256-CLb997BPUIOhvKUQg3d9adPCutLOdxy1VC7iZVkXlfE=",
         "ref": "refs/heads/main",
-        "rev": "4df0adb0b7cfd65af6c6fdad766100b8f1f05664",
-        "revCount": 67,
+        "rev": "764e3c3739b2eaef5f9511decf3784e1f4250973",
+        "revCount": 68,
         "type": "git",
         "url": "https://git.coldsteel.casa/Coldsteel/molds.git"
       },
@@ -378,16 +401,16 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1793294725,
-        "narHash": "sha256-loLMnbbS4KhmG2ln9EY6f0YMNCA273Yx02oWYQ9IMeE=",
+        "lastModified": 1793378308,
+        "narHash": "sha256-FPOGyQnlvbKCEYKNzBvrPH5UnSWnwLf1qHNF0FRb0hg=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "6f06d204d8f2d8761d9da78778745974a3216381",
+        "rev": "f7e078209a295f0919713c326260f706d527697f",
         "type": "github"
       },
       "original": {
         "owner": "NixOS",
-        "ref": "nixos-26.05",
+        "ref": "release-26.05",
         "repo": "nixpkgs",
         "type": "github"
       }
@@ -488,6 +511,22 @@
         "owner": "oxalica",
         "repo": "rust-overlay",
         "type": "github"
+      }
+    },
+    "spectrum": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1786032750,
+        "narHash": "sha256-+Ba/kIn5BjvV7PN8bWOo7RoqgTY/Yv2M7qeMf3wS2Ag=",
+        "ref": "refs/heads/main",
+        "rev": "77d2389874bb092b8dbf05ecc5b1030372e80e98",
+        "revCount": 1417,
+        "type": "git",
+        "url": "https://spectrum-os.org/git/spectrum"
+      },
+      "original": {
+        "type": "git",
+        "url": "https://spectrum-os.org/git/spectrum"
       }
     },
     "treefmt-nix": {
