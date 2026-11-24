@@ -36,6 +36,7 @@ use std::path::Path;
 pub struct Parser {
     parser: *mut ucl_parser,
     flags: ParserFlags,
+    object: Option<Object>,
     var_handler: Option<Box<dyn VariableHandler>>,
 }
 
@@ -58,6 +59,7 @@ impl Parser {
         Parser {
             parser: unsafe { ucl_parser_new(flags.0 as i32) },
             flags,
+            object: None,
             var_handler: None,
         }
     }
@@ -169,13 +171,30 @@ impl Parser {
     }
 
     /// Get a top object for a parser.
+    ///
+    /// Panics before acquiring a reference if the native reference count is exhausted.
     pub fn get_object(&mut self) -> Result<Object, error::UclError> {
-        let result = unsafe { ucl_parser_get_object(self.parser) };
-        if !result.is_null() {
-            Ok(Object::from_c_ptr(result).expect("Failed to build object from non-null pointer"))
-        } else {
-            Err(self.get_error())
+        // The native getter decides whether the parser has a usable top object:
+        // it tests the parser's internal error state, which the error code does
+        // not mirror in either direction. But it also increments the count
+        // without checking, so make sure there is room first.
+        //
+        // The first call needs no check: no object has escaped this parser yet.
+        // That call's object is kept, because libucl 0.9.x retains the same top
+        // object when more chunks are added, and it gives later calls a handle
+        // to check. A checked acquisition that is released at once panics if
+        // the count is exhausted and otherwise changes nothing. Nothing else can
+        // acquire a reference between that check and the native getter, because
+        // objects cannot leave this thread.
+        if let Some(top) = &self.object {
+            drop(top.clone());
         }
+        let result = unsafe { ucl_parser_get_object(self.parser) };
+        let object = Object::from_c_ptr(result).ok_or_else(|| self.get_error())?;
+        if self.object.is_none() {
+            self.object = Some(object.clone());
+        }
+        Ok(object)
     }
 
     /// Register new variable `$var` that should be replaced by the parser to the `value` string.
@@ -249,6 +268,127 @@ mod test {
     use crate::traits::VariableHandler;
     use crate::{UclErrorType, DEFAULT_DUPLICATE_STRATEGY};
     use bitflags::_core::ptr::slice_from_raw_parts;
+
+    #[test]
+    fn repeated_get_object_survives_parser_and_sees_new_chunks() {
+        let mut parser = Parser::default();
+        parser
+            .add_chunk_full(
+                "key = 42;\n",
+                Priority::default(),
+                DEFAULT_DUPLICATE_STRATEGY,
+            )
+            .unwrap();
+        let first = parser.get_object().unwrap();
+        let second = parser.get_object().unwrap();
+        assert_eq!(first.as_ptr(), second.as_ptr());
+        parser
+            .add_chunk_full(
+                "other = 17",
+                Priority::default(),
+                DEFAULT_DUPLICATE_STRATEGY,
+            )
+            .unwrap();
+        let third = parser.get_object().unwrap();
+        drop(parser);
+        drop(first);
+        drop(second);
+        assert_eq!(third.lookup("key").unwrap().as_i64(), Some(42));
+        assert_eq!(third.lookup("other").unwrap().as_i64(), Some(17));
+    }
+
+    #[test]
+    fn cached_object_does_not_hide_parser_error() {
+        let mut parser = Parser::default();
+        parser
+            .add_chunk_full(
+                "key = 42;\n",
+                Priority::default(),
+                DEFAULT_DUPLICATE_STRATEGY,
+            )
+            .unwrap();
+        let _object = parser.get_object().unwrap();
+        assert!(parser
+            .add_chunk_full("invalid =", Priority::default(), DEFAULT_DUPLICATE_STRATEGY)
+            .is_err());
+        assert!(parser.get_object().is_err());
+    }
+
+    #[test]
+    fn cached_object_does_not_hide_error_without_error_code() {
+        let mut parser = Parser::default();
+        parser
+            .add_chunk_full(
+                "key = 42;\n",
+                Priority::default(),
+                DEFAULT_DUPLICATE_STRATEGY,
+            )
+            .unwrap();
+        let _object = parser.get_object().unwrap();
+        // An unknown macro puts libucl in its error state with error code 0.
+        assert!(parser
+            .add_chunk_full(
+                ".nosuchmacro \"x\"\n",
+                Priority::default(),
+                DEFAULT_DUPLICATE_STRATEGY
+            )
+            .is_err());
+        assert!(parser.get_object().is_err());
+    }
+
+    #[test]
+    fn unmatched_brace_does_not_poison_later_get_object() {
+        let mut parser = Parser::default();
+        parser
+            .add_chunk_full(
+                "key = 42;\n",
+                Priority::default(),
+                DEFAULT_DUPLICATE_STRATEGY,
+            )
+            .unwrap();
+        // libucl reports this with an error code but stays out of its error state.
+        assert!(parser
+            .add_chunk_full(
+                "section {\n a = 1;\n",
+                Priority::default(),
+                DEFAULT_DUPLICATE_STRATEGY
+            )
+            .is_err());
+        parser
+            .add_chunk_full(
+                "later = 2;\n",
+                Priority::default(),
+                DEFAULT_DUPLICATE_STRATEGY,
+            )
+            .unwrap();
+        let object = parser.get_object().unwrap();
+        assert_eq!(object.lookup("key").unwrap().as_i64(), Some(42));
+    }
+
+    #[test]
+    fn get_object_panics_before_overflow() {
+        use crate::raw::object::refcount_test_support::SaturatedRef;
+        use std::panic::{catch_unwind, AssertUnwindSafe};
+
+        let mut parser = Parser::default();
+        parser
+            .add_chunk_full(
+                "key = 42;\n",
+                Priority::default(),
+                DEFAULT_DUPLICATE_STRATEGY,
+            )
+            .unwrap();
+        let original = parser.get_object().unwrap();
+        let saturated = unsafe { SaturatedRef::new(original.as_ptr()) };
+        let result = catch_unwind(AssertUnwindSafe(|| parser.get_object()));
+        drop(saturated);
+        assert!(result.is_err());
+        drop(original);
+        assert_eq!(
+            parser.get_object().unwrap().lookup("key").unwrap().as_i64(),
+            Some(42)
+        );
+    }
 
     #[test]
     fn incomplete_input() {

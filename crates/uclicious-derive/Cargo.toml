@@ -1,6 +1,6 @@
 [package]
 name = "uclicious_derive"
-version = "0.10.1"
+version = "0.10.2"
 publish = ["coldsteel"]
 authors = ["Andrey Cherkashin <andoriyu@gmail.com>"]
 edition = "2018"

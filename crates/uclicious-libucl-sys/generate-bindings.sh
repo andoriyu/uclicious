@@ -24,4 +24,6 @@ bindgen wrapper.h -o src/lib.rs \
     --raw-line '#![allow(dead_code)]' \
     --raw-line '#![allow(clippy::all)]' \
     --raw-line '#![allow(rustdoc::all)]' \
+    --raw-line 'mod refcount;' \
+    --raw-line 'pub use refcount::uclicious_object_ref_checked;' \
     -- -I"$(pkg-config --variable=includedir libucl)"

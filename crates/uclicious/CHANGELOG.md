@@ -1,6 +1,13 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.10.2]
+
+- Fix a reference-count overflow that could corrupt memory when repeatedly
+  cloning or acquiring objects. Reference acquisitions from `Clone`,
+  `ObjectRef::to_owned`, and `Parser::get_object` are now checked atomically
+  and panic before the count can overflow.
+
 ## [0.10.0]
 
 - Fix generic derives by preserving type parameters, lifetimes, const generics,

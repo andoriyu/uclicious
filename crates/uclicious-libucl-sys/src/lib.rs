@@ -6,6 +6,8 @@
 #![allow(dead_code)]
 #![allow(clippy::all)]
 #![allow(rustdoc::all)]
+mod refcount;
+pub use refcount::uclicious_object_ref_checked;
 
 pub type __uint64_t = ::std::os::raw::c_ulong;
 pub type __off_t = ::std::os::raw::c_long;

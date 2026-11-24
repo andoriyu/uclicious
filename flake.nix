@@ -32,7 +32,8 @@
               || lib.hasSuffix ".toml" path
               || lib.hasSuffix ".md" path
               || lib.hasSuffix ".ucl" path
-              || lib.hasSuffix ".h" path;
+              || lib.hasSuffix ".h" path
+              || lib.hasSuffix ".c" path;
           };
           nativeBuildInputs = [pkgs.pkg-config];
           buildInputs = [pkgs.libucl];

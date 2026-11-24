@@ -12,7 +12,8 @@ configuration conversion and derive macros.
 See [the library guide](crates/uclicious/README.md) for usage.
 Run `devenv shell -- cargo test --workspace` for tests. The development shell
 provides libucl, pkg-config and tools for regenerating bindings. Downstream
-builds need libucl and pkg-config, but do not need bindgen or libclang.
+builds need libucl, pkg-config and a C compiler, but do not need bindgen or
+libclang.
 
 The crates retain their existing coldsteel registry names and versions.
 Publishing is automatic after required master CI checks pass.

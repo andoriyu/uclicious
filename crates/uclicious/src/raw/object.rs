@@ -31,10 +31,10 @@ use bitflags::_core::fmt::{Display, Formatter};
 use libucl_bind::{
     ucl_object_compare, ucl_object_copy, ucl_object_frombool, ucl_object_fromdouble,
     ucl_object_fromint, ucl_object_fromstring, ucl_object_get_priority, ucl_object_key,
-    ucl_object_lookup, ucl_object_lookup_path, ucl_object_ref, ucl_object_t,
-    ucl_object_toboolean_safe, ucl_object_todouble_safe, ucl_object_toint_safe,
-    ucl_object_tostring_forced, ucl_object_tostring_safe, ucl_object_type, ucl_object_unref,
-    ucl_type_t,
+    ucl_object_lookup, ucl_object_lookup_path, ucl_object_t, ucl_object_toboolean_safe,
+    ucl_object_todouble_safe, ucl_object_toint_safe, ucl_object_tostring_forced,
+    ucl_object_tostring_safe, ucl_object_type, ucl_object_unref, ucl_type_t,
+    uclicious_object_ref_checked,
 };
 use std::borrow::ToOwned;
 use std::collections::HashMap;
@@ -710,8 +710,11 @@ impl fmt::Debug for ObjectRef {
 impl ToOwned for ObjectRef {
     type Owned = Object;
 
+    /// Panics before acquiring a reference if the native reference count is exhausted.
     fn to_owned(&self) -> Self::Owned {
-        let ptr = unsafe { ucl_object_ref(self.as_ptr()) };
+        let mut overflow = false;
+        let ptr = unsafe { uclicious_object_ref_checked(self.as_ptr(), &mut overflow) };
+        assert!(!overflow, "UCL object reference count overflow");
         Object::from_c_ptr(ptr).expect("Got ObjectRef with null ptr")
     }
 }
@@ -731,8 +734,7 @@ impl PartialEq for Object {
 
 impl Clone for Object {
     fn clone(&self) -> Self {
-        let ptr = unsafe { ucl_object_ref(self.as_ptr()) };
-        Object::from_c_ptr(ptr).expect("Got ObjectRef with null ptr")
+        self.inner.to_owned()
     }
 }
 
@@ -764,9 +766,62 @@ impl Ord for Object {
         self.as_ref().cmp(other.as_ref())
     }
 }
+// Native layout access for boundary tests stays in a separate C test archive.
+#[cfg(test)]
+pub(super) mod refcount_test_support {
+    use libucl_bind::ucl_object_t;
+
+    extern "C" {
+        fn uclicious_test_set_refcount(object: *mut ucl_object_t, count: u32) -> u32;
+    }
+
+    pub struct SaturatedRef(*mut ucl_object_t, u32);
+
+    impl SaturatedRef {
+        // The caller keeps the object alive and uses it exclusively until drop.
+        pub unsafe fn new(object: *const ucl_object_t) -> Self {
+            let object = object as *mut ucl_object_t;
+            Self(object, uclicious_test_set_refcount(object, u32::MAX))
+        }
+    }
+
+    impl Drop for SaturatedRef {
+        fn drop(&mut self) {
+            // Restore real owners before any of their destructors run.
+            unsafe { uclicious_test_set_refcount(self.0, self.1) };
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    fn checked_reference_acquisitions_survive_original() {
+        let original = Object::from(42);
+        let cloned = original.clone();
+        let owned = original.as_ref().to_owned();
+        assert_eq!(original.as_ptr(), cloned.as_ptr());
+        assert_eq!(original.as_ptr(), owned.as_ptr());
+        drop(original);
+        assert_eq!(cloned.as_i64(), Some(42));
+        drop(cloned);
+        assert_eq!(owned.as_i64(), Some(42));
+    }
+
+    #[test]
+    fn clone_and_to_owned_panic_before_overflow() {
+        let original = Object::from(42);
+        let saturated = unsafe { refcount_test_support::SaturatedRef::new(original.as_ptr()) };
+        let cloned = std::panic::catch_unwind(|| original.clone());
+        let owned = std::panic::catch_unwind(|| original.as_ref().to_owned());
+        drop(saturated);
+        assert!(cloned.is_err());
+        assert!(owned.is_err());
+        assert_eq!(original.as_i64(), Some(42));
+        assert_eq!(original.clone().as_i64(), Some(42));
+    }
 
     #[test]
     fn eq() {
