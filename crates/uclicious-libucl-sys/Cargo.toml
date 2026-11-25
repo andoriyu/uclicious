@@ -1,6 +1,6 @@
 [package]
 name = "uclicious-libucl-sys"
-version = "0.9.3"
+version = "0.9.4"
 publish = ["coldsteel"]
 description = "Low-level FFI bindings to libucl (0.9.x), linked via pkg-config."
 authors = [
