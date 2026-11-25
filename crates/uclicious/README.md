@@ -1,6 +1,6 @@
 <!-- cargo-sync-readme start -->
 
-# Uclicious [![Build Status](https://dev.azure.com/andoriyu/personal/_apis/build/status/andoriyu.uclicious?branchName=master)](https://dev.azure.com/andoriyu/personal/_build/latest?definitionId=7&branchName=master) [![codecov](https://codecov.io/gh/andoriyu/uclicious/branch/master/graph/badge.svg)](https://codecov.io/gh/andoriyu/uclicious) [![docs.rs](https://docs.rs/uclicious/badge.svg)](https://docs.rs/uclicious) [![Crates.io](https://img.shields.io/crates/v/uclicious.svg)](https://crates.io/crates/uclicious)
+# Uclicious [![docs.rs](https://docs.rs/uclicious/badge.svg)](https://docs.rs/uclicious) [![Crates.io](https://img.shields.io/crates/v/uclicious.svg)](https://crates.io/crates/uclicious)
 
   * [What is Uclicious](#what-is-uclicious)
   * [Usage](#usage)
@@ -26,6 +26,21 @@ Uclicious is built on top of [libucl](https://github.com/vstakhov/libucl). If yo
 It is much more complex than json or TOML, so I recommend reading documentaiton about it. Author of UCL did a great job documenting it. This library provides both: derive-driven and raw-api driven usage patterns.
 
 ## Usage
+
+Version 0.10 requires **libucl 0.9.x**, **pkg-config** and a C compiler on the
+build machine. The FFI crate links the system library; it no longer builds a
+bundled copy. Make sure `pkg-config --modversion libucl` succeeds before building.
+
+For development, `devenv shell` provides Rust, libucl, pkg-config, and the tools
+needed to regenerate the committed FFI bindings. Run
+`devenv shell -- cargo test --workspace` for tests.
+
+Generated `build()` methods return `Result<T, uclicious::BuildError>` with
+`Parser` and `Object` variants. The error supports `Send + Sync` and
+`anyhow::Context`. Generic derives preserve explicit bounds and defaults.
+Use `#[ucl(deny_unknown_fields)]` to reject configuration keys not mapped to
+fields.
+
 ### Raw API
 
 Raw API involves interacting with `libucl` parser via safe api:
